@@ -54,17 +54,17 @@ Dự án kết hợp ba hướng nghiên cứu chính: **Khai phá dữ liệu (
 ---
 
 ## 📁 CẤU TRÚC THƯ MỤC DỰ ÁN
-
+```plaintext
 diabetes-diagnosis-system/
 │
-├── datasets/ # Dữ liệu gốc và dữ liệu sau tiền xử lý
-├── notebooks/ # Jupyter notebooks dùng để phân tích và huấn luyện
-├── models/ # Các mô hình đã huấn luyện (pickle/joblib)
-├── web/ # Mã nguồn ứng dụng web (Flask/Streamlit)
-├── docs/ # Tài liệu báo cáo, slide, biểu đồ
-├── requirements.txt # Danh sách thư viện Python cần cài
-└── README.md # Giới thiệu dự án
-
+├── datasets/           # Dữ liệu gốc và dữ liệu sau tiền xử lý
+├── notebooks/          # Jupyter notebooks dùng để phân tích và huấn luyện
+├── models/             # Các mô hình đã huấn luyện (pickle/joblib)
+├── web/                # Mã nguồn ứng dụng web (Flask/Streamlit)
+├── docs/               # Tài liệu báo cáo, slide, biểu đồ
+├── requirements.txt    # Danh sách thư viện Python cần cài đặt
+└── README.md           # Giới thiệu dự án
+```
 
 ---
 
