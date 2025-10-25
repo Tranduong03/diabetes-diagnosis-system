@@ -1,0 +1,9 @@
+# Các thư viện cơ bản để xử lý dữ liệu và machine learning
+pandas
+numpy
+scikit-learn
+
+# Thêm các thư viện khác nếu bạn cần, ví dụ:
+matplotlib
+seaborn
+jupyter
