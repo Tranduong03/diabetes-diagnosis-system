@@ -1,5 +1,5 @@
 import { BrowserRouter, Routes, Route } from "react-router-dom";
-import Home from "../pages/index";
+import Home from "../pages";
 // import Diagnosis from "../pages/Diagnosis";
 // import Tracking from "../pages/Tracking";
 // import Explanation from "../pages/Explanation";
@@ -9,7 +9,7 @@ import Home from "../pages/index";
 export default function AppRouter() {
   return (
     <BrowserRouter>
-      <Navbar />
+      {/* <Navbar /> */}
       <Routes>
         <Route path="/" element={<Home />} />
         {/* <Route path="/diagnosis" element={<Diagnosis />} /> */}
