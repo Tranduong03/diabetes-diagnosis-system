@@ -1,0 +1,2 @@
+outcome: 0 (Không bị), 1 (Có bị/Tiền tiểu đường).
+stage: 0 (Không áp dụng), 1 (Tiền tiểu đường), 2 (Tiểu đường), 3 (Biến chứng).
