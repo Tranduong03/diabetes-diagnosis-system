@@ -1,0 +1,336 @@
+text,outcome,stage
+"thấy hay buồn ngủ, đặc biệt là buồn ngủ sau khi ăn",1,1
+"cảm thấy mệt mỏi không có sức, chắc do làm việc nhiều",0,0
+"vết thương ở chân của tôi mấy tuần rồi mà không chịu lành",1,3
+"Tôi hay đói, ăn nhiều nhưng vẫn tụt kg",1,2
+"tôi bị đau đầu và sổ mũi, có vẻ như bị cảm",0,0
+"gần đây tôi bị mất ngủ, đêm hay trằn trọc",0,0
+"vết thương của tôi lâu rồi chưa lành",1,3
+"khát nước kinh khủng, nhất là vào ban đêm",1,2
+"rất khát nước, nhất là vào ban đêm",1,2
+"Tôi bị tiêu chảy mấy hôm nay, chắc là do ăn đồ lạ",0,0
+"Tôi bị ù tai bên trái, nghe không rõ lắm",0,0
+"Gần đây tôi bị rụng tóc nhiều bất thường",0,0
+"tôi không có triệu chứng gì đặc biệt cả",0,0
+"tôi cảm thấy mệt mỏi và hay ngáp vặt dù ngủ đủ",1,1
+"tôi phải dậy đi tiểu đêm 3 4 lần",1,2
+"Mắt tôi nhìn mờ hẳn đi, phải đeo kính mới đọc được chữ.",1,3
+"Tôi ăn như hạm đội mà vẫn đói.",1,2
+"Tôi bị trật khớp cổ tay khi chơi thể thao hôm qua",0,0
+"Da tôi bị nổi mề đay, ngứa từng mảng",0,0
+"Dù ăn rất nhiều, tôi vẫn thấy đói.",1,2
+"tôi bị đau dạ dày và ợ nóng.",0,0
+"Gần đây tôi rất hay thèm đồ ngọt, nhất là sau bữa ăn.",1,1
+"Một vết đứt tay nhỏ mà mãi không cầm máu được.",1,3
+"hoàn toàn khỏe mạnh",0,0
+"Tôi đi tiểu liên tục, nước tiểu có vẻ hơi dính.",1,2
+"Chỉ là ho có đờm và hơi sốt.",0,0
+"tôi bị đau lưng dưới và đau khớp gối",0,0
+"dù ăn rất nhiều nhưng ăn xong lại thấy đói ngay",1,2
+"chỉ hơi chóng mặt khi thay đổi tư thế",0,0
+"dạo này hay đi tiểu nhiều, uống nước liên tục mà vẫn khát",1,2
+"da bị khô và mấy vết ngứa rất lâu khỏi",1,3
+"tôi thấy đau đầu và chóng mặt",0,0
+"Tôi ăn nhiều hơn bình thường nhưng vẫn tụt 3kg tháng này.",1,2
+"tôi bị đau họng và ho khan",0,0
+"dạo này tôi bị tụt cân nhiều dù ăn uống bình thường",1,2
+"Tôi hay đói, ăn nhiều nhưng vẫn sụt cân",1,2
+"Hai bàn chân của tôi mất cảm giác, cứ tê bì.",1,3
+"dạo này ăn không tiêu và hay bị ợ chua",0,0
+"hay bị mờ mắt và cảm thấy tê tê ở đầu ngón tay",1,3
+"Tôi thấy khỏe, không có vấn đề gì.",0,0
+"Dạo này tôi bị stress công việc nên hay cáu gắt.",0,0
+"Chỉ bị sổ mũi và nghẹt mũi thôi.",0,0
+"bị sốt và đau họng",0,0
+"tôi bị sụt cân nhanh dù ăn rất nhiều và không kiêng khem",1,2
+"đau mỏi vai gáy do ngồi văn phòng",0,0
+"thường xuyên cảm thấy khô miệng và phải uống nước liên tục",1,2
+"tôi cảm thấy buồn ngủ và mệt nhẹ vào buổi chiều",1,1
+"tôi cảm thấy bình thường, không có dấu hiệu gì lạ",0,0
+"tôi hay đau đầu nhẹ vào buổi sáng",0,0
+"da tôi bị khô và bong tróc, đặc biệt là ở cẳng chân",1,3
+"hay bị khát nước, đặc biệt là vào ban đêm",1,2
+"dạo này tôi khát nước liên tục, uống xong lại khát nữa",1,2
+"tôi cảm thấy người yếu, dễ hoa mắt khi đứng dậy",0,0
+"tôi thấy mắt mờ, nhìn chữ nhỏ không rõ như trước",1,3
+"Tôi bị nổi mẩn đỏ ở tay, có vẻ là dị ứng.",0,0
+"Tôi thấy chán ăn và ăn không ngon miệng.",0,0
+"Hoàn toàn bình thường, chỉ đi khám tổng quát.",0,0
+"tôi hay bị chuột rút về đêm và cảm giác yếu ở chân",1,3
+"tôi phải rặn một lúc mới tiểu được, và dòng tiểu rất yếu",0,0
+"dạo này tôi bị đau lưng vùng thắt lưng, cơn đau lan ra hông",0,0
+"tôi thấy buốt khi đi vệ sinh và nước tiểu có vẻ bị đục",0,0
+"tôi thấy hơi thở có mùi ngọt lạ, giống mùi trái cây",1,3
+"gần đây tôi thường xuyên ngáp vặt và cảm thấy lười vận động",1,1
+"tôi cảm thấy người yếu, dễ hoa mắt khi đứng dậy",0,0
+"đau đầu vào buổi chiều",0,0
+"cổ bị lên mụn đỏ và ngứa",0,0
+"đau lưng dưới và đau khớp gối",0,0
+"Tôi hay đói, ăn nhiều nhưng vẫn sụt kí",1,2
+"Tay chân tôi hay bị tê bì và ngứa ran",1,3
+"Tê tay và chân, cảm giác kim châm",1,3
+"Gần đây tôi hay mệt sau bữa trưa, phải nghỉ mới tỉnh",1,1
+"Tôi cảm thấy hơi khát sau bữa ăn ngọt, không quá nhiều",1,1
+"Buổi chiều tôi hay ngáp và muốn uống nước",1,1
+"Ăn xong tôi cảm thấy hơi mệt và thèm đồ ngọt",1,1
+"Đôi lúc thấy miệng hơi khô nhưng uống nước là bình thường",1,1
+"Tay chân tê nhứt không rõ lý do",1,3
+"khi đi tiểu tôi cảm thấy rất buốt và rát ở đường tiểu",0,0
+"nước tiểu của tôi có màu vàng sậm và mùi rất nồng, khác hẳn bình thường",0,0
+"cảm thấy mót tiểu liên tục nhưng mỗi lần đi rất ít, không thoải mái",0,0
+"tôi thấy nước tiểu có màu hơi hồng, giống như có lẫn máu",0,0
+"tôi thấy kiến bu quanh nước tiểu của mình ở nhà vệ sinh",1,2
+"nước tiểu của tôi có kiến bâu vào, tôi thấy hơi lạ",1,2
+"hay thấy ngứa ran ở lòng bàn chân, bàn tay",1,3
+"tôi để ý thấy kiến hay tập trung ở chỗ tôi đi tiểu",1,2
+"dạo này nước tiểu của tôi có rất nhiều bọt",1,3
+"tôi thấy nước tiểu nổi bọt, giống như xà phòng và rất lâu tan",1,3
+"nước tiểu có bọt bất thường, dù tôi không tiểu mạnh",1,3
+"nước tiểu của tôi có màu vàng đậm, dù tôi uống khá nhiều nước",0,0
+"tôi thấy nước tiểu màu vàng sậm và có mùi khai nồng",0,0
+"Buổi sáng dậy miệng hơi khô, uống nước mới thấy dễ chịu.",0,0
+"nước tiểu có màu cam đậm vào buổi sáng",0,0
+"Sau khi ăn tôi thường buồn ngủ và thấy nặng người",1,1
+"Buổi sáng tôi dậy thấy miệng khô và lưỡi dính lại",1,1
+"Tôi thường xuyên phải đi vệ sinh giữa đêm, rất mệt mỏi",1,2
+"Dù ăn uống bình thường nhưng vẫn thấy yếu và hay đói.",1,2
+"Tôi thấy da bàn chân khô nứt và rất khó liền",1,3
+"Tôi phải đi tiểu gần như mỗi giờ dù không uống nhiều nước",1,2
+"Tôi bị tê bì ngón tay và cảm giác như kiến bò",1,3
+"Thở ra có mùi hơi ngọt, mọi người cũng nhận ra",1,3
+"Buổi chiều tôi rất dễ buồn ngủ và hay thèm đồ ngọt",1,1
+"Da ở cổ tay tôi bị sạm và khô hơn hẳn so với trước",1,3  
+"Thỉnh thoảng tôi cảm thấy ngứa ran ở lòng bàn chân",1,3
+"Sau bữa ăn tôi thấy buồn ngủ và không tập trung nổi.",1,1
+"Thỉnh thoảng tôi thấy chóng mặt nhẹ sau bữa ăn trưa.",0,0
+"Tôi cảm thấy uể oải và thiếu năng lượng dù ngủ đủ.",1,1
+"Dạo này tôi thấy ăn xong rất nhanh đói lại, nhưng không tăng kg",1,1
+"Tôi hay bị khát nhẹ, đặc biệt là sau khi ăn đồ ngọt",1,1
+"Cảm giác hay buồn ngủ dù ngủ đủ giấc",1,1
+"Tôi hay thèm ăn ngọt và cảm thấy khô cổ",1,1
+"Ăn xong một lúc là thấy mệt rũ người",0,0
+"muốn uống nước liên tục, đặc biệt là sau khi ăn",1,1
+"thèm đồ uống có ga và cảm thấy khát nước",1,1
+"cảm thấy khỏe mạnh và không khát nước bất thường",0,0
+"ăn uống bình thường và không đi tiểu nhiều",0,0
+"cân nặng ổn định suốt nhiều tháng",0,0
+"không cảm thấy mệt mỏi sau bữa ăn",0,0
+"không có cảm giác khô miệng hay họng",0,0
+"kiểm tra đường huyết hơi cao hơn mức bình thường",1,1
+"cảm thấy vết thương lành chậm hơn trước",1,1
+"dễ cảm thấy mệt sau khi ăn nhiều tinh bột",1,1
+"tăng cảm giác khát vào buổi tối",1,1
+"miệng có vị đắng hoặc khô khi thức dậy",1,1
+"thỉnh thoảng đi tiểu ban đêm 1–2 lần",1,1
+"ăn nhiều rau xanh và ít đồ ngọt",0,0
+"thường xuyên tập thể dục đều đặn",0,0
+"không bị sụt cân đột ngột",0,0
+"không có cảm giác tê bì ở tay chân",0,0
+"không có nhiễm trùng da hay nấm",0,0
+"không bị khát nước nhiều dù trời nóng",0,0
+"ngủ dậy thường cảm thấy khát và mệt",1,2
+"luôn cảm thấy đói dù vừa ăn xong",1,2
+"bị tê bì nặng ở cả hai chân",1,3
+"sụt cân nhanh dù ăn uống bình thường",1,2
+"luôn cảm thấy mệt mỏi và yếu sức",1,2
+"thị lực giảm rõ rệt, nhìn mờ",1,2
+"vết thương nhỏ khó lành trong nhiều ngày",1,2
+"da khô, nứt nẻ và dễ nhiễm trùng",1,2
+"kiểm tra sức khỏe định kỳ và kết quả bình thường",0,0
+"chỉ đi tiểu 5–6 lần mỗi ngày",0,0
+"không cảm thấy mệt mỏi kéo dài",0,0
+"không bị mờ mắt sau khi ăn",0,0
+"da sáng và không bị thâm sạm",0,0
+"ăn ngọt không cảm thấy khác thường",0,0
+"thường xuyên cảm thấy khát nước nhẹ",1,1
+"có lúc thấy mệt mỏi dù ngủ đủ",1,1
+"đôi khi khô miệng sau khi ăn đồ ngọt",1,1
+"cảm thấy đói nhanh sau bữa ăn",1,1
+"tăng cân nhẹ không rõ nguyên nhân",1,1
+"da bàn chân lạnh và nhợt nhạt",1,3
+"có vết thương chảy dịch vàng",1,3
+"giảm thính lực nhẹ",1,3
+"thỉnh thoảng bị chóng mặt và mờ mắt đột ngột",1,3
+"xuất hiện dấu hiệu suy thận hoặc cao huyết áp",1,3
+"đôi khi đi tiểu nhiều hơn bình thường",1,1
+"hay bị buồn ngủ sau bữa trưa",1,1
+"cảm thấy mắt hơi mờ khi làm việc lâu",1,1
+"thích ăn đồ ngọt và uống nước ngọt thường xuyên",1,1
+"thèm đồ uống có ga và cảm thấy khát nước",1,1
+"dễ nổi cáu và khó tập trung",1,1
+"cảm thấy da hơi khô và ngứa",1,1
+"hay bị tê nhẹ ở đầu ngón tay",1,1
+"đôi khi bị chóng mặt nhẹ khi đói",1,1
+"có người thân từng bị tiểu đường",1,1
+"cảm thấy ăn không ngon miệng vài ngày liền",1,1
+"thỉnh thoảng bị khát nước nhiều sau bữa ăn ngọt",1,1
+"hay bị khô mắt khi làm việc",1,1
+"dễ cáu khi đói",1,1
+"cảm thấy khó ngủ và hay thức giấc giữa đêm",1,1
+"thường xuyên khát nước dữ dội cả ngày",1,2
+"đi tiểu rất nhiều lần trong ngày và ban đêm",1,2
+"dễ bị nhiễm trùng da lặp lại",1,3
+"ngứa rát và khô vùng sinh dục",1,3
+"mờ mắt và thấy đốm đen khi nhìn",1,3
+"dễ chảy máu chân răng",1,3
+"cảm thấy ngứa da hoặc vùng kín",1,2
+"tê rần ở đầu ngón tay hoặc ngón chân",1,2
+"hay bị nhiễm nấm hoặc viêm da",1,2
+"ăn nhiều nhưng vẫn cảm thấy đói",1,2
+"đi tiểu có kiến bu quanh",1,2
+"dễ nổi mụn nhọt tái phát nhiều lần",1,2
+"miệng luôn khô và có mùi lạ",1,2
+"hơi thở có mùi trái cây lên men",1,2
+"xét nghiệm đường huyết lúc đói cao",1,2
+"giảm thị lực nghiêm trọng dù đã đeo kính",1,3
+"bàn chân có vết loét lâu lành",1,3
+"mất cảm giác ở ngón chân",1,3
+"đau nhức ở bàn tay và bàn chân",1,3
+"sưng phù nhẹ ở mắt cá chân",1,3
+"đi tiểu có bọt, nghi ngờ tổn thương thận",1,3
+"giảm cân nhẹ dù không ăn kiêng",1,1
+"cảm thấy chân nặng và hơi tê sau khi đứng lâu",1,1
+"hay cảm thấy hồi hộp nhẹ",1,1
+"da ở cổ hoặc nách sạm hơn bình thường",1,1
+"da không bị khô hoặc ngứa",0,0
+"không có vết thương nào lâu lành",0,0
+"thị lực bình thường và rõ ràng",0,0
+"ngủ ngon và không bị tỉnh giữa đêm vì khát",0,0
+"không bị chóng mặt hay run tay",0,0
+"dễ chóng mặt và đổ mồ hôi lạnh",1,2
+"hay bị khát nước ngay sau bữa ăn",1,2
+"thường cảm thấy đau đầu và mệt sau bữa ngọt",1,2
+"vết trầy nhỏ ở chân khó lành",1,2
+"cảm giác châm chích ở chân tay",1,2
+"giảm cân rõ rệt trong 1 tháng",1,2
+"da trở nên sạm và khô ráp",1,2
+"ít khi cảm thấy đói bất thường",0,0
+"mức năng lượng duy trì tốt suốt ngày",0,0
+"không có người thân bị tiểu đường",0,0
+"da sạm ở cổ, nách và đầu gối",1,3
+"mất ngủ do đau nhức chân tay",1,3
+"mệt mỏi kéo dài dù nghỉ ngơi",1,3
+"tiểu đêm nhiều và khó kiểm soát",1,3
+"cảm thấy thoải mái sau mỗi bữa ăn",0,0
+"không có tiền sử bệnh lý chuyển hóa",0,0
+"thường xuyên vận động thể dục thể thao",0,0
+"ăn nhiều trái cây và rau xanh mỗi ngày",0,0
+"ít khi bị mỏi mắt khi làm việc lâu",0,0
+"ngủ ngon giấc và không thức dậy vì khát",0,0
+"đi tiểu với tần suất bình thường",0,0
+"không bị run tay chân",0,0
+"ăn ngọt vừa phải mà không có triệu chứng khác lạ",0,0
+"đi khám định kỳ và kết quả đường huyết bình thường",0,0
+"cảm thấy dễ chịu khi uống nước, không khát thường xuyên",0,0
+"không bị buồn ngủ quá mức sau bữa ăn",0,0
+"đôi khi mắt mờ nhẹ khi nhìn xa",1,1
+"thấy khó tập trung khi đói",1,1
+"không bị khô họng vào buổi sáng",0,0
+"cảm thấy dễ chịu sau khi ăn tinh bột",0,0
+"mắt nhìn rõ kể cả khi làm việc máy tính lâu",0,0
+"không thấy bất kỳ thay đổi nào trong nước tiểu",0,0
+"tinh thần ổn định, không mệt mỏi kéo dài",0,0
+"không bị tăng hoặc giảm cảm giác thèm ăn",0,0
+"ăn uống điều độ và không cảm thấy khát bất thường",0,0
+"luôn tràn đầy năng lượng trong ngày",0,0
+"không bị sụt hoặc tăng cân bất thường",0,0
+"da mềm mịn và không bị khô",0,0
+"thỉnh thoảng đi tiểu nhiều sau khi uống nước ngọt",1,1
+"khô môi thường xuyên dù uống nước nhiều",1,1
+"thích ăn đồ chiên rán hơn bình thường",1,1
+"dễ bị ngứa da đầu hoặc tay",1,1
+"cảm thấy buồn nôn nhẹ sau khi ăn no",1,1
+"khát nước liên tục và phải uống nước suốt ngày",1,2
+"đi tiểu trên 10 lần/ngày",1,2
+"sụt cân nhanh không rõ lý do",1,2
+"luôn cảm thấy mệt dù nghỉ ngơi",1,2
+"cảm thấy cơ thể yếu sau khi ăn đồ ngọt",1,1
+"có lúc cảm thấy đói vào ban đêm",1,1
+"nước tiểu hơi đậm màu vào buổi sáng",1,1
+"miệng có vị ngọt nhẹ khi ngủ dậy",1,1
+"cảm thấy chóng mặt nhẹ buổi trưa",1,1
+"tăng cân nhẹ dù ăn ít hơn trước",1,1
+"thường bị khô họng khi ngồi máy lạnh",1,1
+"khó ngủ khi bỏ bữa tối",1,1
+"da hồng hào, sức khỏe tốt",0,0
+"không có dấu hiệu mờ mắt khi đọc sách",0,0
+"ăn no cảm thấy no lâu và không đói sớm",0,0
+"ít khi cảm thấy đau đầu hay chóng mặt",0,0
+"không bị mất ngủ hay khô miệng vào đêm",0,0
+"cảm thấy sức khỏe ổn định trong nhiều năm",0,0
+"đôi khi khát nước nhiều hơn bình thường",1,1
+"hay buồn ngủ nhẹ sau khi ăn tinh bột",1,1
+"có cảm giác khô môi vào buổi sáng",1,1
+"dễ cảm thấy mệt nếu không ăn đúng bữa",1,1
+"thường xuyên muốn ăn đồ ngọt",1,1
+"hay cảm thấy khát khi đi ngoài nắng",1,1
+"mệt nhanh khi làm việc chân tay",1,1
+"da tay khô nhẹ khi thời tiết không quá lạnh",1,1
+"bắt đầu thấy xuất hiện vùng da sậm màu quanh nách",1,1
+"hay thức giấc giữa đêm để uống nước",1,1
+"thường bị đói giữa buổi sáng",1,1
+"mắt mờ, nhìn không rõ vật ở xa",1,2
+"vết thương nhỏ chảy mủ và lâu lành",1,2
+"cảm thấy khô miệng khi làm việc lâu",1,2
+"có cảm giác nóng rát ở lòng bàn chân",1,2
+"ngứa rát nhẹ ở vùng cổ và nách",1,2
+"cảm thấy đói nhanh sau bữa ăn",1,2
+"thị lực suy giảm nghiêm trọng",1,3
+"chân tay lạnh và khó cảm nhận nhiệt độ",1,3
+"thường xuyên mất ngủ do đau nhức",1,3
+"mệt mỏi dai dẳng dù nghỉ ngơi đầy đủ",1,3
+"có vết thương bị rỉ dịch vàng",1,3
+"mắt bị chảy nước và nhìn mờ",1,3
+"da sạm toàn thân, đặc biệt ở cổ",1,3
+"ngứa và rát khi đi tiểu",1,3
+"có hiện tượng kiến bu quanh nước tiểu",1,2
+"bị chóng mặt khi bỏ bữa sáng",1,2
+"da khô bong tróc quanh khủy tay",1,2
+"hơi thở có mùi bất thường",1,2
+"vết thương chân sưng đỏ và đau",1,2
+"mệt mỏi cả ngày dù đã ngủ đủ giấc",1,2
+"đường huyết cao khi đo vào sáng sớm",1,2
+"loét bàn chân không lành dù đã điều trị",1,3
+"mắt mờ nặng và thấy đốm đen khi nhìn",1,3
+"mất cảm giác đau ở đầu ngón chân",1,3
+"chân sưng phù vào buổi tối",1,3
+"nước tiểu có bọt và sủi nhiều",1,3
+"đau nhức dai dẳng ở bàn chân",1,3
+"cảm giác tê cứng ở bàn tay",1,3
+"da cổ, nách và đầu gối sạm đen rõ rệt",1,3
+"bị ngứa và khô vùng kín",1,3
+"da khô nứt, ngứa và rát",1,2
+"miệng có mùi trái cây chua",1,2
+"tê rần chân tay khi ngủ",1,2
+"thường bị chuột rút vào ban đêm",1,2
+"đi tiểu nhiều và có mùi lạ",1,2
+"hơi thở nặng mùi và khó chịu",1,2
+"ăn nhiều nhưng vẫn thấy đói",1,2
+"da quanh cổ và nách sạm đen",1,2
+"hay bị nhiễm trùng nấm ở vùng kín",1,2
+"hay cảm thấy chóng mặt và buồn nôn",1,2
+"vết thương ở chân không khô dù đã bôi thuốc",1,2
+"dễ bị mụn nhọt tái đi tái lại",1,2
+"mất ngủ vì khát nước",1,2
+"mắt mờ sau bữa ăn nhiều tinh bột",1,2
+"bị tê đầu ngón tay liên tục",1,2
+"mồ hôi ra nhiều khi đói",1,2
+"vết xước nhỏ chảy máu lâu dừng",1,2
+"huyết áp tăng nhẹ cùng với mệt mỏi",1,2
+"xuất hiện cao huyết áp đi kèm",1,3
+"móng chân đổi màu và dễ gãy",1,3
+"đi tiểu nhiều về đêm kèm đau lưng",1,3
+"nghe kém dần theo thời gian",1,3
+"đi tiểu hơi nhiều hơn người khác",1,1
+"có cảm giác khát nước về đêm",1,1
+"vết thương nhỏ lâu khô hơn bình thường",1,1
+"cảm thấy tê nhẹ ở đầu ngón chân",1,1
+"da cổ bắt đầu sạm hơn",1,1
+"dễ nổi mụn nhọt ở lưng",1,1
+"hay bị ngứa nhẹ sau khi tắm",1,1
+"đôi khi bị khô mắt",1,1
+"mệt mỏi nhẹ vào buổi chiều",1,1
+"không cảm thấy tê ở bất kỳ vị trí nào",0,0
+"da không bị ngứa hay bong tróc",0,0
+"chân bị tê liệt nhẹ buổi sáng",1,3
+"xuất hiện triệu chứng suy thận và đau lưng dưới",1,3
