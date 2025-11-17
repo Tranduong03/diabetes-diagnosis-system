@@ -99,6 +99,7 @@ text,outcome,stage
 "Tôi bị tê bì ngón tay và cảm giác như kiến bò",1,3
 "Thở ra có mùi hơi ngọt, mọi người cũng nhận ra",1,3
 "Buổi chiều tôi rất dễ buồn ngủ và hay thèm đồ ngọt",1,1
+"cơ thể tôi không có gì khác",0,0
 "Da ở cổ tay tôi bị sạm và khô hơn hẳn so với trước",1,3  
 "Thỉnh thoảng tôi cảm thấy ngứa ran ở lòng bàn chân",1,3
 "Sau bữa ăn tôi thấy buồn ngủ và không tập trung nổi.",1,1
@@ -111,4 +112,42 @@ text,outcome,stage
 "Ăn xong một lúc là thấy mệt rũ người",0,0
 "muốn uống nước liên tục, đặc biệt là sau khi ăn",1,1
 "thèm đồ uống có ga và cảm thấy khát nước",1,1
+"tôi ổn, không bị gì lạ",0,0
+"đi vệ sinh nhiều hơn bình thường",1,1
+"cơ thể tôi không có gì lạ",0,0
+"khỏe mạnh và không khát nước bất thường",0,0
+"cảm thấy bình thường, không có dấu hiệu gì lạ",0,0
+"tôi bình thường, chỉ hơi buồn ngủ",0,0
+"tui khỏe mạnh, không có triệu chứng gì",0,0
+"tui khỏe mạnh, không có gì bất thường",0,0
+"tôi khỏe mạnh, không bị gì",0,0
+"tôi ổn, không sao",0,0
+"tui ổn, không bị sao",0,0
+"cân nặng ổn định suốt nhiều tháng qua",0,0
+"cảm thấy vết thương lành chậm hơn trước",1,2
+"không có cảm giác khô miệng hay họng",0,0
+"không cảm thấy mệt mỏi sau bữa ăn",0,0
+"không cảm thấy khát nước bất thường",0,0
+"không cảm thấy đói bất thường",0,0
+"thỉnh thoảng đi tiểu ban đêm 1–2 lần",0,0
+"xuất hiện triệu chứng suy thận và đau lưng dưới",1,3
+"thường bị tê chân, chuột rút về đêm",1,3
+"hay bị chuột rút vào buổi sáng",1,3
+"hay bị nhiễm trùng nấm ở vùng kín",1,2
+"dễ nổi mụn nhọt ở lưng",1,1
+"mất ngủ vì khát nước",1,2
+"tê rần chân, tay khi ngủ",1,2
+"tê rần chân, tay khi về đêm",1,2
+"tôi ít khi cảm thấy đau đầu hay chóng mặt",0,0
+"sức khỏe tôi rất tốt, không bệnh vặt",0,0
+"tôi hay bị bệnh vặt, hắt xì, sổ mũi",0,0
+"thỉnh thoảng cảm sốt, sổ mũi, mệt mỏi",0,0
+"tăng cân mất kiểm soát",1,2
+"cân nặng của tôi tăng bất thường",1,1
+"dạo này tôi bị lên kg, dù ít ăn",1,1
+"đi tiểu trên 10 lần/ngày",1,2
+"nước tiểu của tôi vàng nhạt, có kiến bu",1,2
+"kiến bu vào nước tiểu của tôi",1,2
+"nước tiểu đục màu, khó tiểu",0,0
+
 
