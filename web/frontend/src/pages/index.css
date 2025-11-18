@@ -267,3 +267,27 @@ footer.small {
     grid-template-columns: 1fr;
   }
 }
+
+/* Loading state */
+button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* Placeholder with better formatting */
+.placeholder {
+  white-space: pre-line;
+  line-height: 1.6;
+}
+
+/* Navigation responsive */
+@media (max-width: 768px) {
+  .nav-header {
+    position: relative;
+    padding: 20px 0;
+  }
+  
+  .nav-buttons {
+    justify-content: center;
+  }
+}
