@@ -1,21 +1,57 @@
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import Home from "../pages";
-// import Diagnosis from "../pages/Diagnosis";
-// import Tracking from "../pages/Tracking";
-// import Explanation from "../pages/Explanation";
-// import About from "../pages/About";
-// import Navbar from "../components/Navbar";
+import Login from "../pages/Login";
+import Register from "../pages/Register";
+import Dashboard from "../pages/Dashboard";
+import AdminDashboard from "../pages/AdminDashboard";
+
+// Component bảo vệ route
+const PrivateRoute = ({ children, adminOnly = false }) => {
+  const token = localStorage.getItem('token');
+  const user = JSON.parse(localStorage.getItem('user') || '{}');
+
+  if (!token) {
+    return <Navigate to="/login" replace />;
+  }
+
+  if (adminOnly && user.role !== 'admin') {
+    return <Navigate to="/dashboard" replace />;
+  }
+
+  return children;
+};
 
 export default function AppRouter() {
   return (
     <BrowserRouter>
-      {/* <Navbar /> */}
       <Routes>
+        {/* Public routes */}
         <Route path="/" element={<Home />} />
-        {/* <Route path="/diagnosis" element={<Diagnosis />} /> */}
-        {/* <Route path="/tracking" element={<Tracking />} /> */}
-        {/* <Route path="/explanation" element={<Explanation />} /> */}
-        {/* <Route path="/about" element={<About />} /> */}
+        <Route path="/login" element={<Login />} />
+        <Route path="/register" element={<Register />} />
+        
+        {/* Protected routes */}
+        <Route 
+          path="/dashboard" 
+          element={
+            <PrivateRoute>
+              <Dashboard />
+            </PrivateRoute>
+          } 
+        />
+        
+        {/* Admin only routes */}
+        <Route 
+          path="/admin/dashboard" 
+          element={
+            <PrivateRoute adminOnly={true}>
+              <AdminDashboard />
+            </PrivateRoute>
+          } 
+        />
+        
+        {/* Catch all - redirect to home */}
+        <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </BrowserRouter>
   );
