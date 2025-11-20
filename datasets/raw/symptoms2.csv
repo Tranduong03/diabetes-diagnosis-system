@@ -10,8 +10,12 @@ text,outcome,stage
 "Vết thương của tôi đang lành chậm hơn dạo này. Chân và tay tôi đang châm chích và trở nên tê bì. Tôi cảm thấy thực sự mong manh",1,3
 "Thỉnh thoảng tôi thấy chóng mặt nhẹ sau bữa ăn trưa.",0,0
 "Tôi cảm thấy uể oải và thiếu năng lượng dù ngủ đủ.",1,1
+"tôi muốn đi ngủ sớm",0,0
 "Dạo này tôi thấy ăn xong rất nhanh đói lại, nhưng không tăng kg",1,1
+"trẻ con rất thích đi công viên",0,0
 "Tôi hay bị khát nhẹ, đặc biệt là sau khi ăn đồ ngọt",1,1
+"cuối tuần này tôi muốn đi chơi với bạn bè",0,0
+"tôi đi làm bằng xe máy mỗi ngày",0,0
 "Cảm giác hay buồn ngủ dù ngủ đủ giấc",1,1
 "Gần đây, cơn đau ở bắp chân diễn ra liên tục và tệ hơn khi tôi đứng hoặc đi lâu. Chân tôi bắt đầu sưng và vài mạch máu nổi khá rõ",0,0
 "Tĩnh mạch ở chân gây khó chịu khiến tôi khó ngủ vào ban đêm. Tôi không hiểu tại sao. Tôi bị chuột rút khi chạy nước rút",0,0
@@ -109,7 +113,7 @@ text,outcome,stage
 "thường xuyên cảm thấy khô miệng và phải uống nước liên tục",1,2
 "tôi cảm thấy buồn ngủ và mệt nhẹ vào buổi chiều",1,1
 "Tôi bị ho khan dai dẳng. Các vết nhiễm trùng có vẻ không lành và tôi bị đánh trống ngực. Tôi cũng bị đau họng mãi không khỏi",1,3
-"Dạo này tôi bị stress công việc nên hay cáu gắt."",0,0
+"Dạo này tôi bị stress công việc nên hay cáu gắt.",0,0
 "Tôi thèm hủ tiếu, bún riêu",0,0
 "Phân lỏng, nhiều nước và có mùi hôi, đi kèm với đau bụng. Tôi cảm thấy muốn nôn hầu hết thời gian",0,0
 "Tôi bị sốt cao vài ngày qua không rõ nguyên nhân. Tôi cũng thấy phát ban trên da và rất khó để không gãi",0,0
@@ -120,9 +124,9 @@ text,outcome,stage
 "Tôi đang phải chịu đựng cơn ngứa dữ dội, nôn mửa, mệt mỏi và sụt cân. Tôi sốt cao và da đã chuyển vàng. Nước tiểu sẫm màu và tôi bị đau bụng",0,0
 "Tê tay và chân, cảm giác kim châm",1,3
 "Tôi bị phát ban và kích ứng da, đặc biệt ở các kẽ da. Các vết bầm và vết cắt trên da cũng mất nhiều thời gian để lành",1,3
-"Chỉ bị sổ mũi và nghẹt mũi thôi."",0,0
+"Chỉ bị sổ mũi và nghẹt mũi thôi.",0,0
 "Toàn thân tôi đang run rẩy. Tôi bị mất khả năng nếm và ngửi, và tôi kiệt sức. Đôi khi tôi bị tim đập nhanh hoặc đánh trống ngực",1,2
-"Tôi thèm mì cây"
+"Tôi thèm mì cây",0,0
 "Tôi bị kích ứng da và phát ban, đặc biệt là ở các kẽ da. Các vết cắt và vết bầm trên da cũng mất một lúc mới lành",1,3
 "nước tiểu của tôi có kiến bâu vào, tôi thấy hơi lạ",1,2
 "Gần đây tôi hay mệt sau bữa trưa, phải nghỉ mới tỉnh",1,1
@@ -355,7 +359,7 @@ tôi thấy buốt khi đi vệ sinh và nước tiểu có vẻ bị đục,0,0
 "mẹ tôi mua đường phèn về chưng yến",0,0
 "vết muỗi đốt ở chân gãi trầy xước mà cả tháng rồi vẫn chảy nước vàng",1,3
 "ngủ dậy thấy miệng đắng ngắt và khô khốc",1,1
-"tôi không dám ăn nhiều nhưng cân nặng vẫn giảm vù vù",1,2
+"tôi không dám ăn nhiều nhưng cân nặng vẫn tăng vù vù",1,2
 "cảm thấy hồi hộp, tim đập nhanh vô cớ dù đang ngồi nghỉ",1,2
 "Tôi khó tập trung và cảm xúc thay đổi thất thường. Đôi khi, đầu óc tôi như có mây mù, khiến tôi khó thực hiện ngay cả những việc đơn giản",1,2
 "Tôi cảm thấy cơ bắp run rẩy. Tôi thấy kiệt sức, vị giác và khứu giác bị suy giảm. Đôi khi tôi bị đánh trống ngực hoặc tim đập nhanh",1,2

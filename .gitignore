@@ -16,3 +16,5 @@ __pycache__/
 # Backend environment
 web/backend/venv/
 web/backend/.env
+
+*.pth
