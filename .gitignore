@@ -3,3 +3,16 @@
 test/lab01
 test/lab02
 test/ML
+
+# Virtual environment
+venv/
+.env/
+.env
+
+# Python env
+__pycache__/
+*.pyc
+
+# Backend environment
+web/backend/venv/
+web/backend/.env
