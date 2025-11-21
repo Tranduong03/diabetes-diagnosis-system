@@ -1,9 +1,25 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import "./index.css"; 
 
+// Mean values từ dataset
+const MEAN_VALUES = {
+  Pregnancies: 4,
+  Glucose: 121.7,
+  BloodPressure: 72,
+  SkinThickness: 29,
+  Insulin: 141,
+  BMI: 32.5,
+  DiabetesPedigreeFunction: 0.472,
+  Age: 33
+};
+
+const NUMERIC_FIELDS = Object.keys(MEAN_VALUES);
+
 export default function Home() {
   const navigate = useNavigate();
+  const warningRef = useRef(null);
+
   const [formData, setFormData] = useState({
     Pregnancies: 0,
     Glucose: 120,
@@ -25,6 +41,9 @@ export default function Home() {
 
   const [loading, setLoading] = useState(false);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [showWarning, setShowWarning] = useState(false);
+  const [missingFields, setMissingFields] = useState([]);
+  const [pendingData, setPendingData] = useState(null);
 
   // Check login status
   useEffect(() => {
@@ -32,10 +51,16 @@ export default function Home() {
     setIsLoggedIn(!!token);
   }, []);
 
-  const handleChange = (e) => {
-    const { name, value } = e.target;
-    setFormData({ ...formData, [name]: parseFloat(value) || value });
-  };
+const handleChange = (e) => {
+  const { name, value } = e.target;
+  
+  setFormData({ 
+    ...formData, 
+    [name]: name === 'Symptoms' 
+      ? value  // Giữ nguyên text
+      : (value === '' ? '' : (parseFloat(value) || ''))  // Parse số
+  });
+};
 
   const handleClear = () => {
     setFormData({
@@ -55,16 +80,71 @@ export default function Home() {
       nlp: "Chưa có kết quả — nhấn 'Chẩn đoán' để bắt đầu.",
       final: "Chưa có kết luận.",
     });
+    setShowWarning(false);
+    setMissingFields([]);
+  };
+
+  const checkMissingFields = () => {
+    const missing = [];
+    NUMERIC_FIELDS.forEach(field => {
+      const value = formData[field];
+      if (value === '' || value === null || value === undefined) {
+        missing.push(field);
+      }
+    });
+    return missing;
   };
 
   const handlePredict = async () => {
-    // Check if logged in
+    // Check login
     const token = localStorage.getItem('token');
     if (!token) {
       alert('⚠️ Vui lòng đăng nhập để sử dụng chức năng chẩn đoán!');
       navigate('/login');
       return;
     }
+
+    // Check missing fields
+    const missing = checkMissingFields();
+    
+    if (missing.length > 0) {
+      setMissingFields(missing);
+      setShowWarning(true);
+      
+      // Scroll to warning
+      setTimeout(() => {
+        warningRef.current?.scrollIntoView({ behavior: 'smooth' });
+      }, 100);
+      return;
+    }
+
+    // Nếu không có missing fields, tiếp tục predict
+    await performPrediction(formData);
+  };
+
+  const handleContinueWithMissing = async () => {
+    // Thay thế các giá trị missing bằng mean values
+    const completedData = { ...formData };
+    missingFields.forEach(field => {
+      completedData[field] = MEAN_VALUES[field];
+    });
+
+    setFormData(completedData);
+    setShowWarning(false);
+    setMissingFields([]);
+
+    // Tiếp tục predict
+    await performPrediction(completedData);
+  };
+
+  const handleCancelPrediction = () => {
+    setShowWarning(false);
+    setMissingFields([]);
+    setPendingData(null);
+  };
+
+  const performPrediction = async (dataToPredict) => {
+    const token = localStorage.getItem('token');
 
     setLoading(true);
     setResults({
@@ -76,7 +156,7 @@ export default function Home() {
 
     try {
       // Tạo input data (loại bỏ Symptoms cho ML API)
-      const mlData = { ...formData };
+      const mlData = { ...dataToPredict };
       delete mlData.Symptoms;
 
       // Gọi ML prediction
@@ -100,23 +180,10 @@ export default function Home() {
       
       // Gọi NLP prediction nếu có mô tả triệu chứng
       let nlpResult = null;
-      if (formData.Symptoms && formData.Symptoms.trim()) {
+      if (dataToPredict.Symptoms && dataToPredict.Symptoms.trim()) {
         try {
-          const symptomsText = formData.Symptoms.trim();
+          const symptomsText = dataToPredict.Symptoms.trim();
           const requestBody = { symptoms: symptomsText };
-          
-          console.log('🔍 NLP Request Details:');
-          console.log('  - URL:', 'http://localhost:8000/api/v1/ai/predict/symptoms');
-          console.log('  - Method: POST');
-          console.log('  - Headers:', {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token.substring(0, 20)}...`
-          });
-          console.log('  - Body object:', requestBody);
-          console.log('  - Body JSON string:', JSON.stringify(requestBody));
-          console.log('  - Symptoms value:', symptomsText);
-          console.log('  - Symptoms length:', symptomsText.length);
-          console.log('  - Symptoms type:', typeof symptomsText);
           
           const nlpResponse = await fetch('http://localhost:8000/api/v1/ai/predict/symptoms', {
             method: 'POST',
@@ -127,30 +194,12 @@ export default function Home() {
             body: JSON.stringify(requestBody)
           });
 
-          console.log('📥 NLP Response:');
-          console.log('  - Status:', nlpResponse.status);
-          console.log('  - Status Text:', nlpResponse.statusText);
-          console.log('  - Headers:', Object.fromEntries(nlpResponse.headers.entries()));
-
           if (nlpResponse.ok) {
             nlpResult = await nlpResponse.json();
-            console.log('✅ NLP Result:', nlpResult);
-          } else {
-            const errorText = await nlpResponse.text();
-            console.error('❌ NLP Error Response:', errorText);
-            
-            try {
-              const errorData = JSON.parse(errorText);
-              console.error('  - Error Detail:', errorData);
-            } catch (e) {
-              console.error('  - Raw Error:', errorText);
-            }
           }
         } catch (nlpError) {
-          console.error('❌ NLP Fetch Error:', nlpError);
+          console.error('❌ NLP Error:', nlpError);
         }
-      } else {
-        console.log('⚠️ No symptoms provided, skipping NLP prediction');
       }
       
       // Format kết quả DM
@@ -185,21 +234,19 @@ export default function Home() {
         }
       }
 
-      // Ensemble Result - kết hợp cả ML và NLP
+      // Ensemble Result
       let ensembleConf = mlResult.ensemble_confidence;
       let ensemblePred = mlResult.ensemble_prediction;
       
       if (nlpResult && nlpResult.success) {
-        // Trung bình confidence của ML và NLP
         ensembleConf = (mlResult.ensemble_confidence + nlpResult.ensemble_confidence) / 2;
-        // Voting ensemble
         const totalVotes = mlResult.ensemble_prediction + nlpResult.ensemble_prediction;
         ensemblePred = totalVotes >= 1 ? 1 : 0;
       }
 
       const riskLevel = 
         ensembleConf < 0.3 ? "Thấp" : 
-        ensembleConf < 0.6 ? "Trung bình" : 
+        ensembleConf < 0.55 ? "Trung bình" : 
         "Cao";
 
       const ensembleResult = `
@@ -218,9 +265,9 @@ Kết quả tổng hợp từ ${mlResult.models_count} models ML${nlpResult && n
       if (riskLevel === "Cao") {
         finalConclusion = `🔴 CẢNH BÁO: Nguy cơ cao mắc bệnh tiểu đường!\n\n`;
         finalConclusion += `Các chỉ số đáng lo ngại:\n`;
-        if (formData.Glucose > 140) finalConclusion += `• Glucose: ${formData.Glucose} (cao)\n`;
-        if (formData.BMI > 30) finalConclusion += `• BMI: ${formData.BMI} (thừa cân)\n`;
-        if (formData.Age > 45) finalConclusion += `• Tuổi: ${formData.Age}\n`;
+        if (dataToPredict.Glucose > 140) finalConclusion += `• Glucose: ${dataToPredict.Glucose} (cao)\n`;
+        if (dataToPredict.BMI > 30) finalConclusion += `• BMI: ${dataToPredict.BMI} (thừa cân)\n`;
+        if (dataToPredict.Age > 45) finalConclusion += `• Tuổi: ${dataToPredict.Age}\n`;
         if (nlpResult && nlpResult.success && nlpResult.symptom_count > 0) {
           finalConclusion += `• Triệu chứng: ${nlpResult.symptom_count} triệu chứng phát hiện\n`;
         }
@@ -228,8 +275,9 @@ Kết quả tổng hợp từ ${mlResult.models_count} models ML${nlpResult && n
       } else if (riskLevel === "Trung bình") {
         finalConclusion = `🟡 Nguy cơ ở mức trung bình\n\n`;
         finalConclusion += `Các chỉ số cần chú ý:\n`;
-        if (formData.Glucose >= 100) finalConclusion += `• Glucose: ${formData.Glucose} (nhẹ cao)\n`;
-        if (formData.BMI >= 25) finalConclusion += `• BMI: ${formData.BMI} (thừa cân)\n`;
+        if (dataToPredict.Glucose > 140) finalConclusion += `• Glucose: ${dataToPredict.Glucose} (cao)\n`;
+        else if (dataToPredict.Glucose >= 100) finalConclusion += `• Glucose: ${dataToPredict.Glucose} (cao nhẹ)\n`;
+        if (dataToPredict.BMI >= 25) finalConclusion += `• BMI: ${dataToPredict.BMI} (thừa cân)\n`;
         finalConclusion += `\n👀 Nên theo dõi sức khỏe và duy trì lối sống lành mạnh.`;
         finalConclusion += `\n📊 Kiểm tra định kỳ 6 tháng/lần.`;
       } else {
@@ -300,6 +348,106 @@ Kết quả tổng hợp từ ${mlResult.models_count} models ML${nlpResult && n
       <div className="app">
         {/* LEFT FORM */}
         <section className="card">
+          {/* Warning Modal */}
+          {showWarning && (
+            <div ref={warningRef} className="warning-container" style={{
+              backgroundColor: '#fef3c7',
+              border: '2px solid #f59e0b',
+              borderRadius: '8px',
+              padding: '16px',
+              marginBottom: '16px',
+              animation: 'slideIn 0.3s ease-out'
+            }}>
+              <div style={{ marginBottom: '12px' }}>
+                <h3 style={{ fontSize: '18px', fontWeight: 'bold', color: '#92400e', margin: '0 0 8px 0' }}>
+                  ⚠️ Bạn nhập không đầy đủ thông tin
+                </h3>
+                <p style={{ color: '#b45309', margin: '0 0 8px 0' }}>
+                  Các chỉ số sau chưa được điền hoặc bị bỏ trống:
+                </p>
+              </div>
+
+              <div style={{
+                backgroundColor: 'white',
+                padding: '8px',
+                borderRadius: '4px',
+                marginBottom: '12px',
+                border: '1px solid #fcd34d'
+              }}>
+                <ul style={{ margin: '0', paddingLeft: '20px', color: '#b45309' }}>
+                  {missingFields.map(field => (
+                    <li key={field} style={{ marginBottom: '4px' }}>
+                      {field}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+
+              <p style={{ color: '#b45309', fontWeight: 'bold', margin: '0 0 8px 0' }}>
+                Các chỉ số missing sẽ được thay bằng giá trị bình thường từ cơ sở dữ liệu:
+              </p>
+
+              <div style={{
+                backgroundColor: 'white',
+                padding: '8px',
+                borderRadius: '4px',
+                marginBottom: '12px',
+                border: '1px solid #fcd34d',
+                fontSize: '13px'
+              }}>
+                <table style={{ width: '100%', color: '#b45309' }}>
+                  <tbody>
+                    {missingFields.map(field => (
+                      <tr key={field}>
+                        <td style={{ paddingRight: '16px' }}>{field}:</td>
+                        <td style={{ fontWeight: 'bold', fontFamily: 'monospace' }}>
+                          {MEAN_VALUES[field].toFixed(4)}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+
+              <p style={{ color: '#b45309', margin: '0 0 12px 0' }}>
+                ⚠️ <strong>Lưu ý:</strong> Kết quả dự đoán có thể bị ảnh hưởng do sử dụng giá trị thay thế.
+              </p>
+
+              <div style={{ display: 'flex', gap: '8px' }}>
+                <button
+                  onClick={handleContinueWithMissing}
+                  style={{
+                    flex: 1,
+                    padding: '8px 16px',
+                    backgroundColor: '#f59e0b',
+                    color: 'white',
+                    border: 'none',
+                    borderRadius: '4px',
+                    fontWeight: 'bold',
+                    cursor: 'pointer'
+                  }}
+                >
+                  ✓ Tiếp tục
+                </button>
+                <button
+                  onClick={handleCancelPrediction}
+                  style={{
+                    flex: 1,
+                    padding: '8px 16px',
+                    backgroundColor: '#9ca3af',
+                    color: 'white',
+                    border: 'none',
+                    borderRadius: '4px',
+                    fontWeight: 'bold',
+                    cursor: 'pointer'
+                  }}
+                >
+                  ✕ Hủy
+                </button>
+              </div>
+            </div>
+          )}
+
           <div className="title">
             <div className="logo">DIA</div>
             <div>
@@ -311,25 +459,24 @@ Kết quả tổng hợp từ ${mlResult.models_count} models ML${nlpResult && n
           </div>
 
           <div className="grid">
-            {Object.keys(formData)
-              .filter((key) => key !== "Symptoms")
-              .map((key) => (
-                <div key={key} className="field">
-                  <label>{key}</label>
-                  <input
-                    type="number"
-                    name={key}
-                    value={formData[key]}
-                    onChange={handleChange}
-                    step={key === 'Pregnancies' || key === 'Age' ? '1' : '0.1'}
-                    disabled={loading}
-                  />
-                </div>
-              ))}
+            {NUMERIC_FIELDS.map((key) => (
+              <div key={key} className="field">
+                <label>{key}</label>
+                <input
+                  type="number"
+                  name={key}
+                  value={formData[key]}
+                  onChange={handleChange}
+                  step={key === 'Pregnancies' || key === 'Age' ? '1' : '0.1'}
+                  disabled={loading}
+                  placeholder="Nhập giá trị"
+                />
+              </div>
+            ))}
           </div>
 
           <div className="field full">
-<label>Mô tả triệu chứng / Hồ sơ bệnh án</label>
+            <label>Mô tả triệu chứng / Hồ sơ bệnh án</label>
             <textarea
               name="Symptoms"
               value={formData.Symptoms}
