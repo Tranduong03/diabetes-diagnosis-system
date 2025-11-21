@@ -12,25 +12,23 @@ from pathlib import Path
 class DiabetesMLPredictor:
     def __init__(self):
         """Khởi tạo predictor với các models đã train"""
-        self.models = {}
-        self.scaler = None
+        self.models = {}          # Lưu các model đã load
+        self.scalers = {}         # Lưu scaler riêng theo từng model (nếu cần)
         self.models_dir = self._find_models_directory()
         self.load_models()
     
     def _find_models_directory(self) -> str:
         """Tìm thư mục models (cùng cấp với web/)"""
-        # Từ backend/ lên 1 cấp đến web/, rồi lên 1 cấp nữa đến diabetes-diagnosis-system/
         current_dir = Path(__file__).parent  # backend/ai/
-        backend_dir = current_dir.parent  # backend/
-        web_dir = backend_dir.parent  # web/
-        project_dir = web_dir.parent  # diabetes-diagnosis-system/
+        backend_dir = current_dir.parent     # backend/
+        web_dir = backend_dir.parent         # web/
+        project_dir = web_dir.parent         # diabetes-diagnosis-system/
         models_dir = project_dir / "models"
         
         if models_dir.exists():
             print(f"✅ Found models directory: {models_dir}")
             return str(models_dir)
         else:
-            # Fallback: thử thư mục backend/models/
             fallback_dir = backend_dir / "models"
             print(f"⚠️  Models directory not found at {models_dir}")
             print(f"   Using fallback: {fallback_dir}")
@@ -38,42 +36,45 @@ class DiabetesMLPredictor:
             return str(fallback_dir)
     
     def load_models(self):
-        """Load tất cả models từ thư mục"""
+        """Load tất cả models từ thư mục và scaler riêng nếu có"""
         try:
             print(f"\n{'='*60}")
             print(f"📂 Loading models from: {self.models_dir}")
             print(f"{'='*60}\n")
             
-            # Kiểm tra các file model có tên khác nhau
+            # File model và scaler mapping
             model_patterns = {
-                # 'knn': ['diabetes_knn_model.pkl'],
-                'nb': ['diabetes_nb_model.pkl'],
-
-            # thêm các model khác sau
+                'knn': ['diabetes_knn_model.pkl'],
+                'knn_smote': ['diabetes_knn_smote_model.pkl'],
+                'Naive Bayes': ['diabetes_nb_model.pkl'],
+                'ID3': ['diabetes_id3_model.pkl'],
+            }
+            scaler_mapping = {
+                'knn': ['scaler.pkl', 'diabetes_knn_scaler.pkl', 'standard_scaler.pkl'],
+                'knn_smote': ['diabetes_knn_smote_scaler.pkl'],
+                # NB và ID3 không cần scaler
             }
             
-            # Load scaler nếu có
-            scaler_files = ['scaler.pkl', 'diabetes_scaler.pkl', 'standard_scaler.pkl']
-            for scaler_file in scaler_files:
-                scaler_path = os.path.join(self.models_dir, scaler_file)
-                if os.path.exists(scaler_path):
-                    self.scaler = joblib.load(scaler_path)
-                    print(f"✅ Loaded scaler from {scaler_file}")
-                    break
-            
-            if not self.scaler:
-                print(f"⚠️  No scaler found - will use raw features")
-            
-            # Load các models
             models_loaded = 0
+            
             for model_name, patterns in model_patterns.items():
                 for pattern in patterns:
                     model_path = os.path.join(self.models_dir, pattern)
                     if os.path.exists(model_path):
                         try:
+                            # Load model
                             self.models[model_name] = joblib.load(model_path)
                             print(f"✅ Loaded {model_name} from {pattern}")
                             models_loaded += 1
+                            
+                            # Nếu model có scaler riêng
+                            if model_name in scaler_mapping:
+                                for scaler_file in scaler_mapping[model_name]:
+                                    scaler_path = os.path.join(self.models_dir, scaler_file)
+                                    if os.path.exists(scaler_path):
+                                        self.scalers[model_name] = joblib.load(scaler_path)
+                                        print(f"✅ Loaded scaler for {model_name} from {scaler_file}")
+                                        break
                             break
                         except Exception as e:
                             print(f"❌ Error loading {pattern}: {e}")
@@ -81,7 +82,6 @@ class DiabetesMLPredictor:
             if models_loaded == 0:
                 print(f"\n⚠️  WARNING: No models loaded!")
                 print(f"   Please ensure model files exist in: {self.models_dir}")
-                print(f"   Expected files like: diabetes_knn_model.pkl, diabetes_rf_model.pkl, etc.")
             else:
                 print(f"\n✅ Total models loaded: {models_loaded}")
                 print(f"   Available models: {list(self.models.keys())}")
@@ -92,29 +92,27 @@ class DiabetesMLPredictor:
             print(f"❌ Error loading models: {e}")
             raise
     
-    def preprocess_input(self, data: Dict) -> np.ndarray:
+    def preprocess_input(self, data: Dict, model_name: str) -> np.ndarray:
         """
-        Tiền xử lý dữ liệu đầu vào
+        Tiền xử lý dữ liệu đầu vào theo từng model
         
         Args:
             data: Dictionary chứa các features
+            model_name: Tên model
             
         Returns:
-            numpy array đã được chuẩn hóa (nếu có scaler)
+            numpy array đã được chuẩn hóa (nếu model có scaler)
         """
-        # Thứ tự features ( Pima Indians Diabetes Dataset)
         feature_order = [
             'Pregnancies', 'Glucose', 'BloodPressure', 
             'SkinThickness', 'Insulin', 'BMI', 
             'DiabetesPedigreeFunction', 'Age'
         ]
-        
-        # Tạo array từ dict theo đúng thứ tự
         features = np.array([[float(data.get(f, 0)) for f in feature_order]])
         
-        # Standardize nếu có scaler
-        if self.scaler:
-            features = self.scaler.transform(features)
+        # Nếu model có scaler → scale input
+        if model_name in self.scalers:
+            features = self.scalers[model_name].transform(features)
         
         return features
     
@@ -137,7 +135,7 @@ class DiabetesMLPredictor:
             raise ValueError(f"Model '{model_name}' not found. Available: {available}")
         
         model = self.models[model_name]
-        features = self.preprocess_input(data)
+        features = self.preprocess_input(data, model_name)
         
         # Predict
         prediction = int(model.predict(features)[0])
@@ -145,7 +143,7 @@ class DiabetesMLPredictor:
         # Get probability nếu model hỗ trợ
         try:
             proba = model.predict_proba(features)[0]
-            confidence = float(proba[1])  # Probability của class 1 (có bệnh)
+            confidence = float(proba[1])  # Probability của class 1
         except:
             confidence = float(prediction)
         
@@ -169,24 +167,20 @@ class DiabetesMLPredictor:
         if not self.models:
             raise ValueError("No models loaded. Please check models directory and ensure .pkl files exist.")
         
-        features = self.preprocess_input(data)
         predictions = []
         confidences = []
         details = []
         
-        # Predict với từng model
         for model_name, model in self.models.items():
             try:
+                features = self.preprocess_input(data, model_name)
                 pred = int(model.predict(features)[0])
                 predictions.append(pred)
                 
-                # Get probability
                 try:
-                    proba = model.predict_proba(features)[0]
-                    conf = float(proba[1])
+                    conf = float(model.predict_proba(features)[0][1])
                 except:
                     conf = float(pred)
-                
                 confidences.append(conf)
                 
                 details.append({
@@ -201,7 +195,6 @@ class DiabetesMLPredictor:
         if not predictions:
             raise ValueError("No successful predictions. All models failed.")
         
-        # Ensemble prediction (majority voting)
         ensemble_pred = int(np.round(np.mean(predictions)))
         ensemble_conf = float(np.mean(confidences))
         
