@@ -3,9 +3,10 @@ AI Prediction Routes
 API endpoints cho các chức năng dự đoán bệnh tiểu đường
 """
 
-from fastapi import APIRouter, HTTPException, Depends
-from pydantic import BaseModel, Field, validator
+from fastapi import APIRouter, HTTPException, Depends, Request
+from pydantic import BaseModel, Field
 from typing import Optional, List, Dict
+import json
 from ai.predict_ml import get_predictor
 from ai.predict_nlp import get_nlp_predictor
 from core.security import get_current_active_user
@@ -40,13 +41,8 @@ class DiabetesInput(BaseModel):
         }
 
 class SymptomsInput(BaseModel):
+    """Input cho NLP prediction"""
     symptoms: str = Field(..., min_length=1, description="Mô tả triệu chứng")
-    
-    @validator('symptoms')
-    def validate_symptoms(cls, v):
-        if not v or not v.strip():
-            raise ValueError('Mô tả triệu chứng không được để trống')
-        return v.strip()
     
     class Config:
         json_schema_extra = {
@@ -65,6 +61,120 @@ class PredictionResponse(BaseModel):
     models_count: int
     individual_predictions: List[Dict]
     recommendations: List[str]
+
+# ============ NLP PREDICTION ROUTES (ĐẶT TRƯỚC) ============
+# QUAN TRỌNG: Các route cụ thể phải đặt TRƯỚC các route có path parameter!
+
+@router.post("/predict/symptoms")
+async def predict_from_symptoms(
+    request: Request,
+    current_user = Depends(get_current_active_user)
+):
+    """
+    🔍 Dự đoán từ mô tả triệu chứng (NLP)
+    
+    Phân tích mô tả triệu chứng và đưa ra dự đoán
+    - Nhận diện triệu chứng tự động
+    - Tính mức độ nghiêm trọng
+    - Sử dụng NLP baseline và Logistic Regression models
+    """
+    try:
+        # Debug: Đọc raw body
+        raw_body = await request.body()
+        print(f"\n{'='*60}")
+        print(f"📥 RAW REQUEST BODY:")
+        print(f"   Raw bytes: {raw_body}")
+        print(f"   Decoded: {raw_body.decode('utf-8')}")
+        
+        # Parse manually
+        try:
+            body_data = json.loads(raw_body)
+            print(f"📋 Parsed Data:")
+            print(f"   Keys: {list(body_data.keys())}")
+            print(f"   symptoms value: '{body_data.get('symptoms')}'")
+            print(f"   symptoms type: {type(body_data.get('symptoms'))}")
+            if body_data.get('symptoms'):
+                print(f"   symptoms length: {len(body_data.get('symptoms'))}")
+        except Exception as parse_error:
+            print(f"❌ JSON Parse Error: {parse_error}")
+            raise HTTPException(status_code=400, detail=f"Invalid JSON format: {str(parse_error)}")
+        
+        # Validate manually
+        symptoms_text = body_data.get('symptoms', '')
+        
+        if not symptoms_text:
+            print(f"❌ Empty symptoms field")
+            raise HTTPException(
+                status_code=400, 
+                detail="Field 'symptoms' is required and cannot be empty"
+            )
+        
+        symptoms_text = symptoms_text.strip()
+        
+        if not symptoms_text:
+            print(f"❌ Symptoms is only whitespace")
+            raise HTTPException(
+                status_code=400, 
+                detail="Vui lòng nhập mô tả triệu chứng (không được để trống)"
+            )
+        
+        print(f"✅ Validated symptoms: '{symptoms_text}' (length: {len(symptoms_text)})")
+        print(f"{'='*60}\n")
+        
+        # Gọi NLP predictor
+        nlp_predictor = get_nlp_predictor()
+        result = nlp_predictor.predict_from_symptoms(symptoms_text)
+        
+        if not result['success']:
+            raise HTTPException(status_code=400, detail=result.get('error', 'Prediction failed'))
+        
+        # Phân tích chi tiết triệu chứng
+        symptom_analysis = nlp_predictor.get_symptom_analysis(symptoms_text)
+        
+        response = {
+            "success": True,
+            "result": result['result'],
+            "symptom_count": result['symptom_count'],
+            "severity_score": result['severity_score'],
+            "ensemble_confidence": result['ensemble_confidence'],
+            "risk_level": result['risk_level'],
+            "individual_predictions": result['individual_predictions'],
+            "symptom_analysis": symptom_analysis,
+            "recommendations": generate_nlp_recommendations(result)
+        }
+        
+        print(f"✅ NLP prediction successful")
+        print(f"   Result: {response['result']}")
+        print(f"   Confidence: {response['ensemble_confidence']:.2%}\n")
+        
+        return response
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(f"❌ Error in predict_from_symptoms: {e}")
+        import traceback
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=str(e))
+
+@router.get("/nlp/info")
+async def get_nlp_models_info(current_user = Depends(get_current_active_user)):
+    """
+    ℹ️ Thông tin về NLP models
+    """
+    try:
+        nlp_predictor = get_nlp_predictor()
+        
+        return {
+            "success": True,
+            "models_loaded": list(nlp_predictor.models.keys()),
+            "models_count": len(nlp_predictor.models),
+            "vectorizer_loaded": nlp_predictor.vectorizer is not None,
+            "available_symptoms": list(nlp_predictor.symptom_keywords.keys()),
+        }
+        
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
 # ============ ML PREDICTION ROUTES ============
 
@@ -143,88 +253,6 @@ async def get_models_info(current_user = Depends(get_current_active_user)):
             "models_loaded": list(predictor.models.keys()),
             "models_count": len(predictor.models),
             "scaler_loaded": predictor.scaler is not None,
-        }
-        
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
-
-# ============ NLP PREDICTION ROUTES ============
-
-@router.post("/predict/symptoms")
-async def predict_from_symptoms(
-    data: SymptomsInput,
-    current_user = Depends(get_current_active_user)
-):
-    """
-    🔍 Dự đoán từ mô tả triệu chứng (NLP)
-    
-    Phân tích mô tả triệu chứng và đưa ra dự đoán
-    - Nhận diện triệu chứng tự động
-    - Tính mức độ nghiêm trọng
-    - Sử dụng NLP baseline và Logistic Regression models
-    """
-    try:
-        # Debug logging
-        print(f"\n{'='*60}")
-        print(f"📥 Received NLP request")
-        print(f"   Symptoms: '{data.symptoms}'")
-        print(f"   Length: {len(data.symptoms)}")
-        print(f"{'='*60}\n")
-        
-        # Validate input
-        if not data.symptoms or not data.symptoms.strip():
-            raise HTTPException(
-                status_code=400, 
-                detail="Vui lòng nhập mô tả triệu chứng (không được để trống)"
-            )
-        
-        nlp_predictor = get_nlp_predictor()
-        result = nlp_predictor.predict_from_symptoms(data.symptoms)
-        
-        if not result['success']:
-            raise HTTPException(status_code=400, detail=result.get('error', 'Prediction failed'))
-        
-        # Phân tích chi tiết triệu chứng
-        symptom_analysis = nlp_predictor.get_symptom_analysis(data.symptoms)
-        
-        response = {
-            "success": True,
-            "result": result['result'],
-            "symptom_count": result['symptom_count'],
-            "severity_score": result['severity_score'],
-            "ensemble_confidence": result['ensemble_confidence'],
-            "risk_level": result['risk_level'],
-            "individual_predictions": result['individual_predictions'],
-            "symptom_analysis": symptom_analysis,
-            "recommendations": generate_nlp_recommendations(result)
-        }
-        
-        print(f"✅ NLP prediction successful")
-        print(f"   Result: {response['result']}")
-        print(f"   Confidence: {response['ensemble_confidence']:.2%}\n")
-        
-        return response
-        
-    except HTTPException:
-        raise
-    except Exception as e:
-        print(f"❌ Error in predict_from_symptoms: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
-
-@router.get("/nlp/info")
-async def get_nlp_models_info(current_user = Depends(get_current_active_user)):
-    """
-    ℹ️ Thông tin về NLP models
-    """
-    try:
-        nlp_predictor = get_nlp_predictor()
-        
-        return {
-            "success": True,
-            "models_loaded": list(nlp_predictor.models.keys()),
-            "models_count": len(nlp_predictor.models),
-            "vectorizer_loaded": nlp_predictor.vectorizer is not None,
-            "available_symptoms": list(nlp_predictor.symptom_keywords.keys()),
         }
         
     except Exception as e:
