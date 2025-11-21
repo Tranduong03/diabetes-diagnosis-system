@@ -1,11 +1,11 @@
 text,outcome,stage
 "thấy hay buồn ngủ, đặc biệt là buồn ngủ sau khi ăn",1,1
 "cảm thấy mệt mỏi không có sức, chắc do làm việc nhiều",0,0
-"vết thương ở chân của tôi mấy tuần rồi mà không chịu lành",1,3
+"vết thương ở chân mấy tuần rồi mà không chịu lành",1,3
 "Tôi hay đói, ăn nhiều nhưng vẫn tụt kg",1,2
 "tôi bị đau đầu và sổ mũi, có vẻ như bị cảm",0,0
 "gần đây tôi bị mất ngủ, đêm hay trằn trọc",0,0
-"vết thương của tôi lâu rồi chưa lành",1,3
+"vết thương tôi lâu rồi chưa lành",1,3
 "khát nước kinh khủng, nhất là vào ban đêm",1,2
 "rất khát nước, nhất là vào ban đêm",1,2
 "Tôi bị tiêu chảy mấy hôm nay, chắc là do ăn đồ lạ",0,0
@@ -33,16 +33,19 @@ text,outcome,stage
 "tôi thấy đau đầu và chóng mặt",0,0
 "Tôi ăn nhiều hơn bình thường nhưng vẫn tụt 3kg tháng này.",1,2
 "tôi bị đau họng và ho khan",0,0
-"dạo này tôi bị tụt cân nhiều dù ăn uống bình thường",1,2
-"Tôi hay đói, ăn nhiều nhưng vẫn sụt cân",1,2
 "Hai bàn chân của tôi mất cảm giác, cứ tê bì.",1,3
 "dạo này ăn không tiêu và hay bị ợ chua",0,0
 "hay bị mờ mắt và cảm thấy tê tê ở đầu ngón tay",1,3
 "Tôi thấy khỏe, không có vấn đề gì.",0,0
-"Dạo này tôi bị stress công việc nên hay cáu gắt.",0,0
-"Chỉ bị sổ mũi và nghẹt mũi thôi.",0,0
+"dạo này tôi bị tụt cân nhiều dù ăn uống bình thường",1,2
+"Tôi hay đói, ăn nhiều nhưng vẫn sụt cân",1,2
+"Dạo này tôi bị stress công việc nên hay cáu gắt."",0,0
+"Chỉ bị sổ mũi và nghẹt mũi thôi."",0,0
+"dạo này tôi bị đau lưng vùng thắt lưng, cơn đau lan ra hông",0,0
+tôi thấy buốt khi đi vệ sinh và nước tiểu có vẻ bị đục,0,0
+"tôi thấy hơi thở có mùi ngọt lạ, giống mùi trái cây",1,3
 "bị sốt và đau họng",0,0
-"tôi bị sụt cân nhanh dù ăn rất nhiều và không kiêng khem",1,2
+"tôi bị sụt cân nhanh dù ăn rất nhiều và không kiêng dè",1,2
 "đau mỏi vai gáy do ngồi văn phòng",0,0
 "thường xuyên cảm thấy khô miệng và phải uống nước liên tục",1,2
 "tôi cảm thấy buồn ngủ và mệt nhẹ vào buổi chiều",1,1
@@ -56,37 +59,45 @@ text,outcome,stage
 "Tôi bị nổi mẩn đỏ ở tay, có vẻ là dị ứng.",0,0
 "Tôi thấy chán ăn và ăn không ngon miệng.",0,0
 "Hoàn toàn bình thường, chỉ đi khám tổng quát.",0,0
-"tôi hay bị chuột rút về đêm và cảm giác yếu ở chân",1,3
-"tôi phải rặn một lúc mới tiểu được, và dòng tiểu rất yếu",0,0
-"dạo này tôi bị đau lưng vùng thắt lưng, cơn đau lan ra hông",0,0
-"tôi thấy buốt khi đi vệ sinh và nước tiểu có vẻ bị đục",0,0
-"tôi thấy hơi thở có mùi ngọt lạ, giống mùi trái cây",1,3
-"gần đây tôi thường xuyên ngáp vặt và cảm thấy lười vận động",1,1
-"tôi cảm thấy người yếu, dễ hoa mắt khi đứng dậy",0,0
-"đau đầu vào buổi chiều",0,0
-"cổ bị lên mụn đỏ và ngứa",0,0
-"đau lưng dưới và đau khớp gối",0,0
-"Tôi hay đói, ăn nhiều nhưng vẫn sụt kí",1,2
 "Tay chân tôi hay bị tê bì và ngứa ran",1,3
 "Tê tay và chân, cảm giác kim châm",1,3
 "Gần đây tôi hay mệt sau bữa trưa, phải nghỉ mới tỉnh",1,1
 "Tôi cảm thấy hơi khát sau bữa ăn ngọt, không quá nhiều",1,1
+tôi hay bị chuột rút về đêm và cảm giác yếu ở chân,1,3
+"tôi phải rặn một lúc mới tiểu được, và dòng tiểu rất yếu",0,0
+"gần đây tui thường ngáp vặt và cảm thấy lười vận động",1,1
+"đau đầu vào buổi chiều",0,0
+"cảm thấy vết thương lành chậm hơn trước",1,2
+"thỉnh thoảng cảm sốt, sổ mũi, mệt mỏi",0,0
+"tôi thấy nước tiểu nổi bọt, giống như xà phòng và rất lâu tan",1,3
+"nước tiểu có bọt bất thường, dù tôi không tiểu mạnh",1,3
+"nước tiểu của tôi có màu vàng đậm, dù tôi uống khá nhiều nước",0,0
+"cổ bị lên mụn đỏ và ngứa",0,0
+"đau lưng dưới và đau khớp gối",0,0
+"Tôi hay đói, ăn nhiều nhưng vẫn sụt kí",1,2
 "Buổi chiều tôi hay ngáp và muốn uống nước",1,1
 "Ăn xong tôi cảm thấy hơi mệt và thèm đồ ngọt",1,1
 "Đôi lúc thấy miệng hơi khô nhưng uống nước là bình thường",1,1
 "Tay chân tê nhứt không rõ lý do",1,3
 "khi đi tiểu tôi cảm thấy rất buốt và rát ở đường tiểu",0,0
-"nước tiểu của tôi có màu vàng sậm và mùi rất nồng, khác hẳn bình thường",0,0
-"cảm thấy mót tiểu liên tục nhưng mỗi lần đi rất ít, không thoải mái",0,0
-"tôi thấy nước tiểu có màu hơi hồng, giống như có lẫn máu",0,0
-"tôi thấy kiến bu quanh nước tiểu của mình ở nhà vệ sinh",1,2
 "nước tiểu của tôi có kiến bâu vào, tôi thấy hơi lạ",1,2
 "hay thấy ngứa ran ở lòng bàn chân, bàn tay",1,3
+"tôi thấy nước tiểu có màu hơi hồng, giống như có lẫn máu",0,0
+"tôi thấy kiến bu quanh nước tiểu của mình ở nhà vệ sinh",1,2
+"tui ổn, không bị sao",0,0
+"cân nặng ổn định suốt nhiều tháng qua",0,0
 "tôi để ý thấy kiến hay tập trung ở chỗ tôi đi tiểu",1,2
 "dạo này nước tiểu của tôi có rất nhiều bọt",1,3
-"tôi thấy nước tiểu nổi bọt, giống như xà phòng và rất lâu tan",1,3
-"nước tiểu có bọt bất thường, dù tôi không tiểu mạnh",1,3
-"nước tiểu của tôi có màu vàng đậm, dù tôi uống khá nhiều nước",0,0
+"tôi khỏe mạnh, không bị gì",0,0
+"tôi ổn, không sao",0,0
+"Tôi bị tê bì ngón tay và cảm giác như kiến bò",1,3
+"Thở ra có mùi hơi ngọt, mọi người cũng nhận ra",1,3
+"Buổi chiều tôi rất dễ buồn ngủ và hay thèm đồ ngọt",1,1
+"cơ thể tôi không có gì khác",0,0
+"Da ở cổ tay tôi bị sạm và khô hơn hẳn so với trước",1,3  
+"Thỉnh thoảng tôi cảm thấy ngứa ran ở lòng bàn chân",1,3
+"nước tiểu của tôi có màu vàng sậm và mùi rất nồng, khác hẳn bình thường",0,0
+"cảm thấy mót tiểu liên tục nhưng mỗi lần đi rất ít, không thoải mái",0,0
 "tôi thấy nước tiểu màu vàng sậm và có mùi khai nồng",0,0
 "Buổi sáng dậy miệng hơi khô, uống nước mới thấy dễ chịu.",0,0
 "nước tiểu có màu cam đậm vào buổi sáng",0,0
@@ -95,12 +106,7 @@ text,outcome,stage
 "Tôi thường xuyên phải đi vệ sinh giữa đêm, rất mệt mỏi",1,2
 "Dù ăn uống bình thường nhưng vẫn thấy yếu và hay đói.",1,2
 "Tôi thấy da bàn chân khô nứt và rất khó liền",1,3
-"Tôi phải đi tiểu gần như mỗi giờ dù không uống nhiều nước",1,2
-"Tôi bị tê bì ngón tay và cảm giác như kiến bò",1,3
-"Thở ra có mùi hơi ngọt, mọi người cũng nhận ra",1,3
-"Buổi chiều tôi rất dễ buồn ngủ và hay thèm đồ ngọt",1,1
-"Da ở cổ tay tôi bị sạm và khô hơn hẳn so với trước",1,3  
-"Thỉnh thoảng tôi cảm thấy ngứa ran ở lòng bàn chân",1,3
+"Tôi phải đi tiểu gần   như mỗi giờ dù không uống nhiều nước",1,2
 "Sau bữa ăn tôi thấy buồn ngủ và không tập trung nổi.",1,1
 "Thỉnh thoảng tôi thấy chóng mặt nhẹ sau bữa ăn trưa.",0,0
 "Tôi cảm thấy uể oải và thiếu năng lượng dù ngủ đủ.",1,1
@@ -111,4 +117,93 @@ text,outcome,stage
 "Ăn xong một lúc là thấy mệt rũ người",0,0
 "muốn uống nước liên tục, đặc biệt là sau khi ăn",1,1
 "thèm đồ uống có ga và cảm thấy khát nước",1,1
-
+"tôi ổn, không bị gì lạ",0,0
+"đi vệ sinh nhiều hơn bình thường",1,1
+"cơ thể tôi không có gì lạ",0,0
+"khỏe mạnh và không khát nước bất thường",0,0
+"cảm thấy bình thường, không có dấu hiệu gì lạ",0,0
+"đêm nào cũng lục đục dậy đi toilet 3-4 bận, chả ngủ nghê được gì, rất mệt",1,2
+"tui khỏe mạnh, không có gì bất thường",0,0
+"tăng cân mất kiểm soát",1,2
+"cân nặng của tôi tăng bất thường",1,1
+"tôi bình thường, chỉ hơi buồn ngủ",0,0
+"tui khỏe mạnh, không có triệu chứng gì",0,0
+"tê rần chân, tay khi ngủ",1,2
+"tê rần chân, tay khi về đêm",1,2
+"tui ăn như hạm đội, mỗi lần 4-5 bát cơm mà cái quần này càng lúc càng rộng",1,2
+"dạo này tôi bị lên kg, dù ít ăn",1,1
+"đi tiểu trên 10 lần/ngày",1,2
+"nước tiểu của tôi vàng nhạt, có kiến bu",1,2
+"kiến bu vào nước tiểu của tôi",1,2
+"nước tiểu đục màu, khó tiểu",0,0
+"tôi hay đi ngoài đường hóng mát cho khuây khỏa",0,0
+"tôi rất thích ăn đồ ngọt và các loại bánh kẹo",0,0
+"không có cảm giác khô miệng hay họng",0,0
+"không cảm thấy mệt mỏi sau bữa ăn",0,0
+"không cảm thấy khát nước bất thường",0,0
+"không cảm thấy đói bất thường",0,0
+"thỉnh thoảng đi tiểu ban đêm 1–2 lần",0,0
+"xuất hiện triệu chứng suy thận và đau lưng dưới",1,3
+"thường bị tê chân, chuột rút về đêm",1,3
+"hay bị chuột rút vào buổi sáng",1,3
+"hay bị nhiễm trùng nấm ở vùng kín",1,2
+"dễ nổi mụn nhọt ở lưng",1,1
+"cảm giác như đang dẫm lên bông gòn, chân không thật chút nào",1,3
+"tự nhiên bị sụp mí mắt một bên, nhìn một hóa hai",1,3
+"cam ở sạp này rất ngọt và mọng nước",0,0
+"tôi bị vấp ngã nên đau ngón chân cái",0,0
+"mất ngủ vì khát nước",1,2
+"cái lưng tui dạo này cứ mọc mụn nhọt mãi, cái này lặn thì cái khác mọc lên",1,2
+"uống nước liên tục mà cổ họng vẫn cứ khô khốc như sa mạc",1,2
+"tiểu tiện là nhu cầu sinh lý bình thường của con người",0,0
+"con tôi đang học trường tiểu học gần nhà",0,0
+"tôi không thích ăn đường vì sợ sâu răng",0,0
+"chuyện vợ chồng dạo này chán quá, trên bảo dưới không nghe",1,3
+"cảm giác bàn chân mất cảm giác, đạp phải gai cũng không biết đau",1,3
+"tôi đang đọc một cuốn tiểu thuyết trinh thám rất hấp dẫn",0,0
+"cô ấy có giọng hát rất ngọt ngào làm tôi mê mẩn",0,0
+"kiến thức của bác sĩ rất uyên thâm",0,0
+"chúng tôi bị lạc đường giữa rừng sâu",0,0
+"tôi thích uống trà không đường để giảm cân",0,0
+"tôi ít khi cảm thấy đau đầu hay chóng mặt",0,0
+"sức khỏe tôi rất tốt, không bệnh vặt",0,0
+"tôi hay bị bệnh vặt, hắt xì, sổ mũi",0,0
+"làm bánh xong tôi bị đường dính đầy người rất khó chịu",0,0
+"đường về nhà tôi rất tối về đêm, đi lại khó khăn",0,0
+"hôm qua tôi bị kiến lửa cắn vào chân sưng tấy rất đau",0,0
+"cứ ăn cơm trưa xong là mắt tui díp lại, gục ngay tại bàn không tài nào cưỡng được",1,1
+"dạo này tự nhiên thèm của ngọt, cứ phải làm cốc trà sữa mới chịu nổi",1,1
+"sao dạo này da dẻ khô rang, bôi kem dưỡng ẩm mãi mà vẫn nứt nẻ",1,1
+"người ngợm lúc nào cũng lờ đờ, chả muốn nhấc tay làm gì cả",1,1
+"tiểu đội trưởng ra lệnh cho chúng tôi tập hợp",0,0
+"đường kính của hình tròn này là bao nhiêu",0,0
+"tôi cảm thấy khát vọng sống mãnh liệt",0,0
+"đường đời tấp nập kẻ đến người đi",0,0
+"tôi bị ngã xe trầy xước hết chân tay",0,0
+"mấy đầu ngón chân tui cứ tê tê râm ran như có kiến bò dưới da, khó chịu ghê",1,3
+"cái vết xước ở gót chân do giày cọ vào cả tháng nay rồi mà nó cứ loét ra, không chịu khép miệng",1,3
+"dạo này nhìn điện thoại cứ phải nheo mắt lại, hình ảnh cứ nhòe nhòe sương khói sao ấy",1,3
+"tôi cảm thấy đau lòng khi xem bộ phim này",0,0
+"mẹ tôi mua đường phèn về chưng yến",0,0
+"tôi thấy mệt mỏi vì áp lực công việc quá lớn",0,0
+"tiểu sử của vị tướng này rất hào hùng",0,0
+"tôi ăn uống rất đầy đủ, thậm chí ăn nhiều mà cân nặng vẫn giảm vù vù",1,2
+"vết muỗi đốt ở chân gãi trầy xước mà cả tháng rồi vẫn chảy nước vàng",1,3
+"ngủ dậy thấy miệng đắng ngắt và khô khốc",1,1
+"tôi không dám ăn nhiều nhưng cân nặng vẫn giảm vù vù",1,2
+"cảm thấy hồi hộp, tim đập nhanh vô cớ dù đang ngồi nghỉ",1,2
+"tôi thích đi chơi",0,0
+"tui muốn đi chơi",0,0
+"tôi ăn chay trường nên không ăn thịt",0,0
+"người cứ hầm hập nóng, uống nước đá liên tục mà vẫn cảm giác như đang ở sa mạc",1,2
+"ăn xong bụng cứ chướng lên, đầy hơi khó tiêu cả buổi trời mới hết",1,3
+"MÌNH THÍCH ĐI ĂN MÌ CAY",0,0
+"hơi thở của tôi dạo này có mùi lạ, giống như mùi táo chín",1,2
+"vừa thay kính cận tháng trước mà tháng này lại thấy mờ, độ mắt nhảy lung tung",1,2
+"đi toilet xong chưa kịp xả nước thì thấy kiến bu đầy vào bồn cầu",1,2
+"mình hay đi chơi đêm",0,0
+"dạo này đi bộ một chút là bắp chân đau cứng lại, nghỉ một tí mới đi tiếp được",1,3
+"đây là bí quyết gia truyền ngọt ngào của gia đình",0,0
+"da vùng cổ và nách tự nhiên bị thâm đen và dày lên dù kỳ cọ rất kỹ",1,1
+"cứ đến tầm 10 giờ sáng là tay chân bủn rủn, vã mồ hôi lạnh phải kiếm gì ăn gấp",1,1
+"mình thích đi đêm",0,0

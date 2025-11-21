@@ -1,0 +1,8 @@
+Github: https://github.com/Tranduong03/diabetes-diagnosis-system
+
+Báo cáo NLP: https://docs.google.com/document/d/1XwCQcCPwcFS_cQqWTslUbSVSArSLG9n2-mBdeE7e-xs/edit?tab=t.0
+
+Báo cáo ML: 
+https://docs.google.com/document/d/1dgfwjG4inRn5C8NS-sBs5RCRkSTZc3bx3HRR7RWCnkY/edit?tab=t.0
+
+Slide: https://gamma.app/docs/He-thong-Du-oan-Nguy-co-Mac-Benh-Tieu-uong-a247zj4knm4reqz?mode=doc
