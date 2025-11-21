@@ -189,7 +189,7 @@ class DiabetesNLPPredictor:
         model = self.models[model_name]
         
         try:
-            # Thử gọi model với raw text (assum Pipeline)
+            # Thử gọi model với raw text (assume Pipeline)
             # Pipeline sẽ tự vectorize bên trong
             prediction = int(model.predict([text])[0])
             

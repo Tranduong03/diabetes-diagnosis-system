@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import "./index.css"; 
 
@@ -27,7 +27,7 @@ export default function Home() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
 
   // Check login status
-  useState(() => {
+  useEffect(() => {
     const token = localStorage.getItem('token');
     setIsLoggedIn(!!token);
   }, []);
@@ -102,28 +102,60 @@ export default function Home() {
       let nlpResult = null;
       if (formData.Symptoms && formData.Symptoms.trim()) {
         try {
+          const symptomsText = formData.Symptoms.trim();
+          const requestBody = { symptoms: symptomsText };
+          
+          console.log('🔍 NLP Request Details:');
+          console.log('  - URL:', 'http://localhost:8000/api/v1/ai/predict/symptoms');
+          console.log('  - Method: POST');
+          console.log('  - Headers:', {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token.substring(0, 20)}...`
+          });
+          console.log('  - Body object:', requestBody);
+          console.log('  - Body JSON string:', JSON.stringify(requestBody));
+          console.log('  - Symptoms value:', symptomsText);
+          console.log('  - Symptoms length:', symptomsText.length);
+          console.log('  - Symptoms type:', typeof symptomsText);
+          
           const nlpResponse = await fetch('http://localhost:8000/api/v1/ai/predict/symptoms', {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
               'Authorization': `Bearer ${token}`
             },
-            body: JSON.stringify({ symptoms: formData.Symptoms })
+            body: JSON.stringify(requestBody)
           });
+
+          console.log('📥 NLP Response:');
+          console.log('  - Status:', nlpResponse.status);
+          console.log('  - Status Text:', nlpResponse.statusText);
+          console.log('  - Headers:', Object.fromEntries(nlpResponse.headers.entries()));
 
           if (nlpResponse.ok) {
             nlpResult = await nlpResponse.json();
+            console.log('✅ NLP Result:', nlpResult);
           } else {
-            console.error('NLP response error:', nlpResponse.status);
+            const errorText = await nlpResponse.text();
+            console.error('❌ NLP Error Response:', errorText);
+            
+            try {
+              const errorData = JSON.parse(errorText);
+              console.error('  - Error Detail:', errorData);
+            } catch (e) {
+              console.error('  - Raw Error:', errorText);
+            }
           }
         } catch (nlpError) {
-          console.error('NLP fetch error:', nlpError);
+          console.error('❌ NLP Fetch Error:', nlpError);
         }
+      } else {
+        console.log('⚠️ No symptoms provided, skipping NLP prediction');
       }
       
       // Format kết quả DM
       const dmModels = mlResult.individual_predictions.filter(p => 
-        ['ID3', 'Naive Bayes', 'Knn'].includes(p.model)
+        ['Naive Bayes','Knn'].includes(p.model)
       );
       
       const dmResults = dmModels.map(m => 
@@ -172,12 +204,12 @@ export default function Home() {
 
       const ensembleResult = `
 Kết quả tổng hợp từ ${mlResult.models_count} models ML${nlpResult && nlpResult.success ? ' + NLP' : ''}:
-• Dự đoán: ${ensemblePred === 1 ? 'Có nguy cơ' : 'Không có nguy cơ'}
-• Độ tin cậy ML: ${(mlResult.ensemble_confidence * 100).toFixed(1)}%${
+- Dự đoán: ${ensemblePred === 1 ? 'Có nguy cơ' : 'Không có nguy cơ'}
+- Độ tin cậy ML: ${(mlResult.ensemble_confidence * 100).toFixed(1)}%${
   nlpResult && nlpResult.success ? `\n• Độ tin cậy NLP: ${(nlpResult.ensemble_confidence * 100).toFixed(1)}%` : ''
 }
-• Độ tin cậy tổng: ${(ensembleConf * 100).toFixed(1)}%
-• Mức độ nguy cơ: ${riskLevel}
+- Độ tin cậy tổng: ${(ensembleConf * 100).toFixed(1)}%
+- Mức độ nguy cơ: ${riskLevel}
       `.trim();
 
       // Final conclusion
@@ -297,7 +329,7 @@ Kết quả tổng hợp từ ${mlResult.models_count} models ML${nlpResult && n
           </div>
 
           <div className="field full">
-            <label>Mô tả triệu chứng / Hồ sơ bệnh án</label>
+<label>Mô tả triệu chứng / Hồ sơ bệnh án</label>
             <textarea
               name="Symptoms"
               value={formData.Symptoms}
