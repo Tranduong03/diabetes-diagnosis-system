@@ -1,45 +1,339 @@
-# web/backend/ai/routes.py
-from fastapi import APIRouter, HTTPException, Request, status
-from typing import Dict
+"""
+AI Prediction Routes
+API endpoints cho các chức năng dự đoán bệnh tiểu đường
+"""
+
+from fastapi import APIRouter, HTTPException, Depends
+from pydantic import BaseModel, Field, validator
+from typing import Optional, List, Dict
 from ai.predict_ml import get_predictor
+from ai.predict_nlp import get_nlp_predictor
+from core.security import get_current_active_user
 
-router = APIRouter(prefix="/ai", tags=["AI"])
+router = APIRouter(prefix="/ai", tags=["AI Prediction"])
 
-@router.post("/predict")
-async def predict(request: Request):
+# ============ SCHEMAS ============
+
+class DiabetesInput(BaseModel):
+    """Input data cho ML prediction"""
+    Pregnancies: int = Field(ge=0, le=20)
+    Glucose: float = Field(ge=0, le=300)
+    BloodPressure: float = Field(ge=0, le=200)
+    SkinThickness: float = Field(ge=0, le=100)
+    Insulin: float = Field(ge=0, le=1000)
+    BMI: float = Field(ge=0, le=70)
+    DiabetesPedigreeFunction: float = Field(ge=0, le=3)
+    Age: int = Field(ge=1, le=120)
+    
+    class Config:
+        json_schema_extra = {
+            "example": {
+                "Pregnancies": 2,
+                "Glucose": 120,
+                "BloodPressure": 70,
+                "SkinThickness": 20,
+                "Insulin": 100,
+                "BMI": 26.5,
+                "DiabetesPedigreeFunction": 0.472,
+                "Age": 34
+            }
+        }
+
+class SymptomsInput(BaseModel):
+    symptoms: str = Field(..., min_length=1, description="Mô tả triệu chứng")
+    
+    @validator('symptoms')
+    def validate_symptoms(cls, v):
+        if not v or not v.strip():
+            raise ValueError('Mô tả triệu chứng không được để trống')
+        return v.strip()
+    
+    class Config:
+        json_schema_extra = {
+            "example": {
+                "symptoms": "Tôi cảm thấy khát nước, đi tiểu nhiều, sụt cân"
+            }
+        }
+
+class PredictionResponse(BaseModel):
+    """Response cho prediction"""
+    success: bool
+    ensemble_prediction: int
+    ensemble_confidence: float
+    risk_level: str
+    result: str
+    models_count: int
+    individual_predictions: List[Dict]
+    recommendations: List[str]
+
+# ============ ML PREDICTION ROUTES ============
+
+@router.post("/predict", response_model=PredictionResponse)
+async def predict_diabetes(
+    data: DiabetesInput,
+    current_user = Depends(get_current_active_user)
+):
     """
-    Endpoint nhận JSON body với các features (Pregnancies, Glucose, ...).
-    Trả về kết quả ensemble tương tự cấu trúc mà frontend kỳ vọng.
+    🔮 Dự đoán nguy cơ bệnh tiểu đường (Ensemble ML)
+    
+    Sử dụng nhiều models ML để dự đoán:
+    - Random Forest, Decision Tree, Naive Bayes, KNN
+    - Logistic Regression, Gradient Boosting, SVM
     """
     try:
-        body: Dict = await request.json()
-    except Exception:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid JSON body")
-
-    predictor = get_predictor()
-
-    # Nếu không có model nào được load, trả lỗi rõ ràng
-    if not predictor.models:
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="No models available on server. Please check models directory and files."
-        )
-
-    try:
-        # predict_ensemble trả về dict với keys: ensemble_confidence, risk_level, models_count, individual_predictions, result, ...
-        result = predictor.predict_ensemble(body)
-        # Optionally add explanation rules
-        try:
-            result['explanation'] = predictor.get_decision_tree_rules(body)
-        except Exception:
-            pass
-
-        return result
-
-    except ValueError as ve:
-        # Lỗi do input / no models
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(ve))
+        predictor = get_predictor()
+        
+        # Convert pydantic model to dict
+        input_data = data.model_dump()
+        
+        # Predict
+        result = predictor.predict_ensemble(input_data)
+        
+        # Tạo recommendations
+        recommendations = generate_ml_recommendations(input_data, result)
+        
+        return {
+            "success": True,
+            **result,
+            "recommendations": recommendations
+        }
+        
     except Exception as e:
-        # Log server-side nếu cần
-        print("Prediction error:", e)
-        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Prediction failed")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@router.post("/predict/{model_name}")
+async def predict_with_specific_model(
+    model_name: str,
+    data: DiabetesInput,
+    current_user = Depends(get_current_active_user)
+):
+    """
+    🎯 Dự đoán bằng 1 model cụ thể
+    
+    Available models:
+    - random_forest, decision_tree, naive_bayes, knn
+    - logistic_regression, gradient_boosting, svm
+    """
+    try:
+        predictor = get_predictor()
+        input_data = data.model_dump()
+        
+        result = predictor.predict_single_model(model_name, input_data)
+        
+        return {
+            "success": True,
+            **result
+        }
+        
+    except ValueError as e:
+        raise HTTPException(status_code=404, detail=str(e))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@router.get("/models/info")
+async def get_models_info(current_user = Depends(get_current_active_user)):
+    """
+    ℹ️ Thông tin về các ML models đã load
+    """
+    try:
+        predictor = get_predictor()
+        
+        return {
+            "success": True,
+            "models_loaded": list(predictor.models.keys()),
+            "models_count": len(predictor.models),
+            "scaler_loaded": predictor.scaler is not None,
+        }
+        
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+# ============ NLP PREDICTION ROUTES ============
+
+@router.post("/predict/symptoms")
+async def predict_from_symptoms(
+    data: SymptomsInput,
+    current_user = Depends(get_current_active_user)
+):
+    """
+    🔍 Dự đoán từ mô tả triệu chứng (NLP)
+    
+    Phân tích mô tả triệu chứng và đưa ra dự đoán
+    - Nhận diện triệu chứng tự động
+    - Tính mức độ nghiêm trọng
+    - Sử dụng NLP baseline và Logistic Regression models
+    """
+    try:
+        # Debug logging
+        print(f"\n{'='*60}")
+        print(f"📥 Received NLP request")
+        print(f"   Symptoms: '{data.symptoms}'")
+        print(f"   Length: {len(data.symptoms)}")
+        print(f"{'='*60}\n")
+        
+        # Validate input
+        if not data.symptoms or not data.symptoms.strip():
+            raise HTTPException(
+                status_code=400, 
+                detail="Vui lòng nhập mô tả triệu chứng (không được để trống)"
+            )
+        
+        nlp_predictor = get_nlp_predictor()
+        result = nlp_predictor.predict_from_symptoms(data.symptoms)
+        
+        if not result['success']:
+            raise HTTPException(status_code=400, detail=result.get('error', 'Prediction failed'))
+        
+        # Phân tích chi tiết triệu chứng
+        symptom_analysis = nlp_predictor.get_symptom_analysis(data.symptoms)
+        
+        response = {
+            "success": True,
+            "result": result['result'],
+            "symptom_count": result['symptom_count'],
+            "severity_score": result['severity_score'],
+            "ensemble_confidence": result['ensemble_confidence'],
+            "risk_level": result['risk_level'],
+            "individual_predictions": result['individual_predictions'],
+            "symptom_analysis": symptom_analysis,
+            "recommendations": generate_nlp_recommendations(result)
+        }
+        
+        print(f"✅ NLP prediction successful")
+        print(f"   Result: {response['result']}")
+        print(f"   Confidence: {response['ensemble_confidence']:.2%}\n")
+        
+        return response
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(f"❌ Error in predict_from_symptoms: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@router.get("/nlp/info")
+async def get_nlp_models_info(current_user = Depends(get_current_active_user)):
+    """
+    ℹ️ Thông tin về NLP models
+    """
+    try:
+        nlp_predictor = get_nlp_predictor()
+        
+        return {
+            "success": True,
+            "models_loaded": list(nlp_predictor.models.keys()),
+            "models_count": len(nlp_predictor.models),
+            "vectorizer_loaded": nlp_predictor.vectorizer is not None,
+            "available_symptoms": list(nlp_predictor.symptom_keywords.keys()),
+        }
+        
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@router.post("/batch-predict")
+async def batch_predict(
+    data_list: List[DiabetesInput],
+    current_user = Depends(get_current_active_user)
+):
+    """
+    📦 Dự đoán hàng loạt (batch prediction)
+    """
+    try:
+        predictor = get_predictor()
+        results = []
+        
+        for data in data_list:
+            input_data = data.model_dump()
+            result = predictor.predict_ensemble(input_data)
+            results.append(result)
+        
+        return {
+            "success": True,
+            "total_predictions": len(results),
+            "results": results
+        }
+        
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+# ============ HELPER FUNCTIONS ============
+
+def generate_ml_recommendations(input_data: Dict, prediction: Dict) -> List[str]:
+    """Tạo recommendations từ ML prediction"""
+    recommendations = []
+    
+    # Check glucose
+    if input_data['Glucose'] > 140:
+        recommendations.append("⚠️ Nồng độ glucose cao - Cần kiểm tra và điều chỉnh chế độ ăn")
+    elif input_data['Glucose'] < 70:
+        recommendations.append("⚠️ Nồng độ glucose thấp - Cần bổ sung đường")
+    
+    # Check BMI
+    if input_data['BMI'] > 30:
+        recommendations.append("⚠️ BMI cao - Nên giảm cân và tăng vận động")
+    elif input_data['BMI'] < 18.5:
+        recommendations.append("⚠️ BMI thấp - Cần cải thiện dinh dưỡng")
+    
+    # Check blood pressure
+    if input_data['BloodPressure'] > 90:
+        recommendations.append("⚠️ Huyết áp cao - Nên theo dõi và điều chỉnh")
+    
+    # Check age
+    if input_data['Age'] > 45 and prediction['ensemble_prediction'] == 1:
+        recommendations.append("⚠️ Tuổi cao + nguy cơ - Nên kiểm tra định kỳ 3-6 tháng")
+    
+    # General recommendations
+    if prediction['risk_level'] == "Cao":
+        recommendations.extend([
+            "🏥 Nên đi khám bác sĩ sớm để được tư vấn cụ thể",
+            "📊 Kiểm tra đường huyết định kỳ",
+            "🥗 Chế độ ăn ít đường, ít tinh bột",
+            "🏃 Tăng cường vận động ít nhất 30 phút/ngày"
+        ])
+    elif prediction['risk_level'] == "Trung bình":
+        recommendations.extend([
+            "👀 Theo dõi sức khỏe định kỳ",
+            "🥗 Duy trì chế độ ăn cân bằng",
+            "💪 Tập thể dục đều đặn"
+        ])
+    else:
+        recommendations.extend([
+            "✅ Kết quả tốt - Duy trì lối sống lành mạnh",
+            "🥗 Tiếp tục chế độ ăn uống cân bằng",
+            "💪 Duy trì hoạt động thể chất"
+        ])
+    
+    return recommendations
+
+def generate_nlp_recommendations(result: Dict) -> List[str]:
+    """Tạo recommendations từ NLP prediction"""
+    recommendations = []
+    
+    symptom_count = result.get('symptom_count', 0)
+    risk_level = result.get('risk_level', '')
+    
+    if symptom_count == 0:
+        recommendations.append("✅ Không phát hiện triệu chứng đáng lo ngại")
+        recommendations.append("Tiếp tục theo dõi sức khỏe định kỳ")
+    elif symptom_count == 1:
+        recommendations.append("⚠️ Phát hiện 1 triệu chứng")
+        recommendations.append("👀 Theo dõi thêm và liên hệ bác sĩ nếu tình trạng kéo dài")
+    else:
+        recommendations.append(f"⚠️ Phát hiện {symptom_count} triệu chứng liên quan")
+    
+    if risk_level == "Cao":
+        recommendations.extend([
+            "🏥 Nên đi khám bác sĩ sớm",
+            "📋 Chuẩn bị hồ sơ y tế đầy đủ",
+            "🔬 Yêu cầu xét nghiệm glucose máu"
+        ])
+    elif risk_level == "Trung bình":
+        recommendations.extend([
+            "📊 Kiểm tra định kỳ 3-6 tháng",
+            "🥗 Duy trì chế độ ăn lành mạnh",
+            "💪 Tăng cường hoạt động thể chất"
+        ])
+    else:
+        recommendations.append("✅ Kết quả tốt - Tiếp tục lối sống lành mạnh")
+    
+    return recommendations
