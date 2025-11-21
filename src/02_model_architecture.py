@@ -67,7 +67,7 @@ class DiabetesDataset(Dataset):
                 total_score += weight
                 
         # Chuẩn hóa: Chia cho 10 để điểm số này không quá lớn so với vector của ViBERT
-        return [total_score / 10.0]
+        return [total_score / 15.0]
 
     def __len__(self):
         return len(self.texts)
