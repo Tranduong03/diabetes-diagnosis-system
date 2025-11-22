@@ -1,5 +1,5 @@
 """
-AI Prediction Routes
+AI Prediction Routes - Updated with NLP Model Selection
 API endpoints cho các chức năng dự đoán bệnh tiểu đường
 """
 
@@ -51,6 +51,22 @@ class SymptomsInput(BaseModel):
             }
         }
 
+class SymptomsInputWithModel(BaseModel):
+    """Input cho NLP prediction với model selection"""
+    symptoms: str = Field(..., min_length=1, description="Mô tả triệu chứng")
+    model: Optional[str] = Field(
+        default="auto", 
+        description="Model NLP: 'auto', 'phobert', 'baseline', 'logistic_regression'"
+    )
+    
+    class Config:
+        json_schema_extra = {
+            "example": {
+                "symptoms": "Tôi cảm thấy khát nước, đi tiểu nhiều, sụt cân",
+                "model": "phobert"
+            }
+        }
+
 class PredictionResponse(BaseModel):
     """Response cho prediction"""
     success: bool
@@ -62,8 +78,221 @@ class PredictionResponse(BaseModel):
     individual_predictions: List[Dict]
     recommendations: List[str]
 
-# ============ NLP PREDICTION ROUTES (ĐẶT TRƯỚC) ============
-# QUAN TRỌNG: Các route cụ thể phải đặt TRƯỚC các route có path parameter!
+# ============ NLP ROUTES (ĐẶT TRƯỚC - SPECIFIC routes trước generic) ============
+
+@router.get("/nlp/models")
+async def list_nlp_models(current_user = Depends(get_current_active_user)):
+    """
+    📋 Danh sách các NLP models có sẵn
+    
+    Response:
+    {
+        "available_models": ["phobert", "baseline", "logistic_regression"],
+        "default_model": "auto",
+        "models_info": {...}
+    }
+    """
+    try:
+        nlp_predictor = get_nlp_predictor()
+        
+        # Kiểm tra model availability
+        available_models = []
+        models_info = {}
+        
+        # Check PhoBERT
+        if nlp_predictor.has_phobert:
+            available_models.append("phobert")
+            models_info["phobert"] = {
+                "name": "PhoBERT (SentenceTransformer)",
+                "status": "loaded",
+                "description": "Mô hình hiểu ngữ nghĩa tiếng Việt tốt nhất, hỗ trợ dự đoán outcome + stage",
+                "accuracy": 0.85,
+                "speed": "Chậm (500ms)",
+                "memory": "1-2GB"
+            }
+        
+        # Check Legacy models
+        for model_name in nlp_predictor.models.keys():
+            available_models.append(model_name)
+            if model_name == 'baseline':
+                models_info['baseline'] = {
+                    "name": "Baseline (Keyword-based)",
+                    "status": "loaded",
+                    "description": "Mô hình cơ bản dựa trên từ khóa, nhanh và nhẹ",
+                    "accuracy": 0.70,
+                    "speed": "Nhanh (50ms)",
+                    "memory": "<100MB"
+                }
+            elif model_name == 'logistic_regression':
+                models_info['logistic_regression'] = {
+                    "name": "Logistic Regression (ML-based)",
+                    "status": "loaded",
+                    "description": "Mô hình ML với feature engineering",
+                    "accuracy": 0.72,
+                    "speed": "Nhanh (50ms)",
+                    "memory": "<100MB"
+                }
+        
+        return {
+            "success": True,
+            "available_models": available_models,
+            "default_model": "phobert" if "phobert" in available_models else "baseline",
+            "models_info": models_info,
+            "total_models": len(available_models)
+        }
+        
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@router.post("/predict/symptoms-with-model")
+async def predict_from_symptoms_with_model(
+    request: SymptomsInputWithModel,
+    current_user = Depends(get_current_active_user)
+):
+    """
+    🔍 Dự đoán từ mô tả triệu chứng với lựa chọn model
+    
+    Models:
+    - "auto" (default): Tự chọn model tốt nhất có sẵn
+    - "phobert": PhoBERT (nếu có)
+    - "baseline": Baseline keyword-based
+    - "logistic_regression": Logistic Regression
+    """
+    try:
+        symptoms_text = request.symptoms.strip()
+        model_choice = request.model.lower() if request.model else "auto"
+        
+        if not symptoms_text:
+            raise HTTPException(
+                status_code=400, 
+                detail="Vui lòng nhập mô tả triệu chứng (không được để trống)"
+            )
+        
+        print(f"\n{'='*60}")
+        print(f"📊 NLP Prediction with Model Selection")
+        print(f"   Symptoms: {symptoms_text[:50]}...")
+        print(f"   Model choice: {model_choice}")
+        print(f"{'='*60}\n")
+        
+        nlp_predictor = get_nlp_predictor()
+        result = None
+        selected_model = None
+        
+        # ============================================================
+        # AUTO mode: Chọn model tốt nhất
+        # ============================================================
+        if model_choice == "auto":
+            if nlp_predictor.has_phobert:
+                print(f"✅ AUTO: Chọn PhoBERT (tốt nhất)")
+                result = nlp_predictor.phobert_predictor.predict(symptoms_text)
+                selected_model = "phobert"
+            elif nlp_predictor.models.get('baseline'):
+                print(f"✅ AUTO: PhoBERT không có, dùng Baseline")
+                result = nlp_predictor.predict_from_symptoms(symptoms_text)
+                selected_model = "baseline"
+            else:
+                raise HTTPException(
+                    status_code=400,
+                    detail="Không có NLP models nào có sẵn"
+                )
+        
+        # ============================================================
+        # PhoBERT mode
+        # ============================================================
+        elif model_choice == "phobert":
+            if not nlp_predictor.has_phobert:
+                raise HTTPException(
+                    status_code=400,
+                    detail="PhoBERT model không được load. Vui lòng train model trước."
+                )
+            print(f"✅ Chọn PhoBERT")
+            result = nlp_predictor.phobert_predictor.predict(symptoms_text)
+            selected_model = "phobert"
+        
+        # ============================================================
+        # Baseline mode
+        # ============================================================
+        elif model_choice == "baseline":
+            if 'baseline' not in nlp_predictor.models:
+                raise HTTPException(
+                    status_code=400,
+                    detail="Baseline model không được load"
+                )
+            print(f"✅ Chọn Baseline")
+            result = nlp_predictor.predict_from_symptoms(symptoms_text)
+            selected_model = "baseline"
+        
+        # ============================================================
+        # Logistic Regression mode
+        # ============================================================
+        elif model_choice == "logistic_regression":
+            if 'logistic_regression' not in nlp_predictor.models:
+                raise HTTPException(
+                    status_code=400,
+                    detail="Logistic Regression model không được load"
+                )
+            print(f"✅ Chọn Logistic Regression")
+            result = nlp_predictor.predict_from_symptoms(symptoms_text)
+            selected_model = "logistic_regression"
+        
+        else:
+            raise HTTPException(
+                status_code=400,
+                detail=f"Model '{model_choice}' không hợp lệ. Chọn: auto, phobert, baseline, logistic_regression"
+            )
+        
+        if not result or not result.get('success'):
+            raise HTTPException(status_code=400, detail=result.get('error', 'Prediction failed'))
+        
+        # Phân tích chi tiết triệu chứng
+        symptom_analysis = nlp_predictor.get_symptom_analysis(symptoms_text)
+        
+        response = {
+            "success": True,
+            "selected_model": selected_model,
+            "result": result['result'],
+            "symptom_count": result.get('symptom_count', 0),
+            "severity_score": result.get('severity_score', 0),
+            "ensemble_confidence": result['ensemble_confidence'] if 'ensemble_confidence' in result else result.get('confidence', 0),
+            "risk_level": result.get('risk_level', 'Unknown'),
+            "individual_predictions": result.get('individual_predictions', []),
+            "symptom_analysis": symptom_analysis,
+            "recommendations": generate_nlp_recommendations(result)
+        }
+        
+        print(f"✅ NLP prediction successful with {selected_model}")
+        print(f"   Result: {response['result']}")
+        print(f"   Confidence: {response['ensemble_confidence']:.2%}\n")
+        
+        return response
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(f"❌ Error in predict_from_symptoms_with_model: {e}")
+        import traceback
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=str(e))
+
+@router.get("/nlp/info")
+async def get_nlp_models_info(current_user = Depends(get_current_active_user)):
+    """
+    ℹ️ Thông tin về NLP models
+    """
+    try:
+        nlp_predictor = get_nlp_predictor()
+        
+        return {
+            "success": True,
+            "models_loaded": list(nlp_predictor.models.keys()),
+            "models_count": len(nlp_predictor.models),
+            "vectorizer_loaded": nlp_predictor.vectorizer is not None,
+            "phobert_loaded": nlp_predictor.has_phobert,
+            "available_symptoms": list(nlp_predictor.symptom_keywords.keys()),
+        }
+        
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
 @router.post("/predict/symptoms")
 async def predict_from_symptoms(
@@ -71,22 +300,18 @@ async def predict_from_symptoms(
     current_user = Depends(get_current_active_user)
 ):
     """
-    🔍 Dự đoán từ mô tả triệu chứng (NLP)
+    🔍 Dự đoán từ mô tả triệu chứng (NLP) - Backward compatible
     
-    Phân tích mô tả triệu chứng và đưa ra dự đoán
-    - Nhận diện triệu chứng tự động
-    - Tính mức độ nghiêm trọng
-    - Sử dụng NLP baseline và Logistic Regression models
+    Giữ nguyên endpoint cũ cho backward compatibility
+    Chọn model tốt nhất (auto)
     """
     try:
-        # Debug: Đọc raw body
         raw_body = await request.body()
         print(f"\n{'='*60}")
         print(f"📥 RAW REQUEST BODY:")
         print(f"   Raw bytes: {raw_body}")
         print(f"   Decoded: {raw_body.decode('utf-8')}")
         
-        # Parse manually
         try:
             body_data = json.loads(raw_body)
             print(f"📋 Parsed Data:")
@@ -99,7 +324,6 @@ async def predict_from_symptoms(
             print(f"❌ JSON Parse Error: {parse_error}")
             raise HTTPException(status_code=400, detail=f"Invalid JSON format: {str(parse_error)}")
         
-        # Validate manually
         symptoms_text = body_data.get('symptoms', '')
         
         if not symptoms_text:
@@ -121,14 +345,12 @@ async def predict_from_symptoms(
         print(f"✅ Validated symptoms: '{symptoms_text}' (length: {len(symptoms_text)})")
         print(f"{'='*60}\n")
         
-        # Gọi NLP predictor
         nlp_predictor = get_nlp_predictor()
         result = nlp_predictor.predict_from_symptoms(symptoms_text)
         
         if not result['success']:
             raise HTTPException(status_code=400, detail=result.get('error', 'Prediction failed'))
         
-        # Phân tích chi tiết triệu chứng
         symptom_analysis = nlp_predictor.get_symptom_analysis(symptoms_text)
         
         response = {
@@ -140,7 +362,8 @@ async def predict_from_symptoms(
             "risk_level": result['risk_level'],
             "individual_predictions": result['individual_predictions'],
             "symptom_analysis": symptom_analysis,
-            "recommendations": generate_nlp_recommendations(result)
+            "recommendations": generate_nlp_recommendations(result),
+            "method": result.get('method', 'Unknown')
         }
         
         print(f"✅ NLP prediction successful")
@@ -157,25 +380,6 @@ async def predict_from_symptoms(
         traceback.print_exc()
         raise HTTPException(status_code=500, detail=str(e))
 
-@router.get("/nlp/info")
-async def get_nlp_models_info(current_user = Depends(get_current_active_user)):
-    """
-    ℹ️ Thông tin về NLP models
-    """
-    try:
-        nlp_predictor = get_nlp_predictor()
-        
-        return {
-            "success": True,
-            "models_loaded": list(nlp_predictor.models.keys()),
-            "models_count": len(nlp_predictor.models),
-            "vectorizer_loaded": nlp_predictor.vectorizer is not None,
-            "available_symptoms": list(nlp_predictor.symptom_keywords.keys()),
-        }
-        
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
-
 # ============ ML PREDICTION ROUTES ============
 
 @router.post("/predict", response_model=PredictionResponse)
@@ -187,8 +391,8 @@ async def predict_diabetes(
     🔮 Dự đoán nguy cơ bệnh tiểu đường (Ensemble ML)
     
     Sử dụng nhiều models ML để dự đoán:
-    - Random Forest, Decision Tree, Naive Bayes, KNN
-    - Logistic Regression, Gradient Boosting, SVM
+    - Data Mining: ID3, Naive Bayes, KNN
+    - Machine Learning: Random Forest, Gradient Boosting, SVM, Logistic Regression
     """
     try:
         predictor = get_predictor()
@@ -218,11 +422,10 @@ async def predict_with_specific_model(
     current_user = Depends(get_current_active_user)
 ):
     """
-    🎯 Dự đoán bằng 1 model cụ thể
+    🎯 Dự đoán bằng 1 model ML cụ thể
     
     Available models:
-    - random_forest, decision_tree, naive_bayes, knn
-    - logistic_regression, gradient_boosting, svm
+    - knn, knn_smote, Naive Bayes, id3
     """
     try:
         predictor = get_predictor()
@@ -252,7 +455,7 @@ async def get_models_info(current_user = Depends(get_current_active_user)):
             "success": True,
             "models_loaded": list(predictor.models.keys()),
             "models_count": len(predictor.models),
-            "scaler_loaded": predictor.scaler is not None,
+            "scaler_loaded": bool(predictor.scalers),
         }
         
     except Exception as e:

@@ -1,15 +1,14 @@
 """
-NLP Prediction Service
+NLP Prediction Service - Updated with PhoBERT Integration
 Xử lý triệu chứng bằng NLP models để dự đoán bệnh tiểu đường
-Models: nlp_baseline_model.pkl, nlp_lr_model.pkl (có thể là Pipeline)
+Models: PhoBERT (SentenceTransformer) + Legacy models (keyword-based)
 """
-
 import joblib
 import numpy as np
 import os
+import re
 from typing import Dict, List, Tuple
 from pathlib import Path
-import re
 
 class DiabetesNLPPredictor:
     def __init__(self):
@@ -17,6 +16,11 @@ class DiabetesNLPPredictor:
         self.models = {}
         self.vectorizer = None
         self.models_dir = self._find_nlp_models_directory()
+        
+        self.phobert_predictor = None
+        self.has_phobert = False
+        self._init_phobert()
+        
         self.symptom_keywords = {
             'glucose': ['đường huyết', 'glucose', 'glucose cao', 'đường cao'],
             'thirst': ['khát', 'khát nước', 'uống nước nhiều', 'cơn khát'],
@@ -30,14 +34,15 @@ class DiabetesNLPPredictor:
             'headache': ['đau đầu', 'đau', 'nhức đầu', 'đau nửa đầu'],
             'depression': ['trầm cảm', 'buồn', 'uất chí', 'tâm trạng', 'tự tử'],
         }
+        
         self.load_models()
     
     def _find_nlp_models_directory(self) -> str:
-        """Tìm thư mục NLP models (diabetes-diagnosis-system/models/nlp/)"""
-        current_dir = Path(__file__).parent  # backend/ai/
-        backend_dir = current_dir.parent  # backend/
-        web_dir = backend_dir.parent  # web/
-        project_dir = web_dir.parent  # diabetes-diagnosis-system/
+        """Tìm thư mục NLP models"""
+        current_dir = Path(__file__).parent
+        backend_dir = current_dir.parent
+        web_dir = backend_dir.parent
+        project_dir = web_dir.parent
         nlp_models_dir = project_dir / "models" / "nlp"
         
         if nlp_models_dir.exists():
@@ -45,25 +50,36 @@ class DiabetesNLPPredictor:
             return str(nlp_models_dir)
         else:
             fallback_dir = backend_dir / "models" / "nlp"
-            print(f"⚠️  NLP models directory not found at {nlp_models_dir}")
+            print(f"⚠️ NLP models directory not found at {nlp_models_dir}")
             print(f"   Using fallback: {fallback_dir}")
             fallback_dir.mkdir(parents=True, exist_ok=True)
             return str(fallback_dir)
     
+    def _init_phobert(self):
+        """Khởi tạo PhoBERT predictor nếu có"""
+        try:
+            from ai.phobert_adapter import get_phobert_predictor
+            self.phobert_predictor = get_phobert_predictor()
+            self.has_phobert = True
+            print("✅ PhoBERT predictor initialized successfully")
+        except Exception as e:
+            print(f"⚠️ PhoBERT initialization failed: {e}")
+            print(f"   Will use legacy NLP models as fallback")
+            self.has_phobert = False
+            self.phobert_predictor = None
+    
     def load_models(self):
-        """Load tất cả NLP models từ thư mục"""
+        """Load tất cả legacy NLP models từ thư mục"""
         try:
             print(f"\n{'='*60}")
-            print(f"📂 Loading NLP models from: {self.models_dir}")
+            print(f"📂 Loading legacy NLP models from: {self.models_dir}")
             print(f"{'='*60}\n")
             
-            # Model patterns để tìm
             model_patterns = {
                 'baseline': ['nlp_baseline_model.pkl', 'baseline_model.pkl', 'baseline.pkl'],
                 'logistic_regression': ['nlp_lr_model.pkl', 'lr_model.pkl', 'logistic_regression.pkl']
             }
             
-            # Load vectorizer nếu có (nhưng không bắt buộc vì models có thể là Pipeline)
             vectorizer_files = ['vectorizer.pkl', 'tfidf_vectorizer.pkl', 'nlp_vectorizer.pkl']
             for vec_file in vectorizer_files:
                 vec_path = os.path.join(self.models_dir, vec_file)
@@ -72,13 +88,12 @@ class DiabetesNLPPredictor:
                         self.vectorizer = joblib.load(vec_path)
                         print(f"✅ Loaded vectorizer from {vec_file}")
                     except Exception as e:
-                        print(f"⚠️  Error loading vectorizer: {e}")
+                        print(f"⚠️ Error loading vectorizer: {e}")
                     break
             
             if not self.vectorizer:
-                print(f"⚠️  No separate vectorizer found - models may be Pipeline objects")
+                print(f"⚠️ No separate vectorizer found")
             
-            # Load models
             models_loaded = 0
             for model_name, patterns in model_patterns.items():
                 for pattern in patterns:
@@ -92,50 +107,35 @@ class DiabetesNLPPredictor:
                         except Exception as e:
                             print(f"❌ Error loading {pattern}: {e}")
             
-            if models_loaded == 0:
-                print(f"\n⚠️  WARNING: No NLP models loaded!")
+            if models_loaded == 0 and not self.has_phobert:
+                print(f"\n⚠️ WARNING: No legacy NLP models loaded!")
                 print(f"   Expected files like: nlp_baseline_model.pkl, nlp_lr_model.pkl")
             else:
-                print(f"\n✅ Total NLP models loaded: {models_loaded}")
-                print(f"   Available models: {list(self.models.keys())}")
+                if models_loaded > 0:
+                    print(f"\n✅ Total legacy NLP models loaded: {models_loaded}")
+                    print(f"   Available models: {list(self.models.keys())}")
             
             print(f"\n{'='*60}\n")
             
         except Exception as e:
             print(f"❌ Error loading NLP models: {e}")
-            raise
     
     def preprocess_text(self, text: str) -> str:
-        """
-        Tiền xử lý text
-        - Đảm bảo là string
-        - Chuyển thành chữ thường
-        - Loại bỏ ký tự đặc biệt
-        - Xoá khoảng trắng thừa
-        """
-        # Đảm bảo text là string
+        """Tiền xử lý text"""
         if not isinstance(text, str):
             text = str(text)
         
         if not text:
             return ""
         
-        # Chuyển thành chữ thường
         text = text.lower()
-        
-        # Loại bỏ số và ký tự đặc biệt (giữ lại chữ cái và khoảng trắng)
         text = re.sub(r'[^a-záàảãạăằắẳẵặâầấẩẫậèéẻẽẹêềếểễệìíỉĩịòóỏõọôồốổỗộơờớởỡợùúủũụưừứửữựỳýỷỹỵđ\s]', '', text)
-        
-        # Xoá khoảng trắng thừa
         text = ' '.join(text.split())
         
         return text
     
     def extract_symptom_features(self, text: str) -> Dict[str, float]:
-        """
-        Trích xuất đặc trưng triệu chứng từ text
-        Đếm xem có bao nhiêu từ khóa liên quan đến mỗi loại triệu chứng
-        """
+        """Trích xuất đặc trưng triệu chứng từ text"""
         processed_text = self.preprocess_text(text)
         features = {}
         
@@ -148,12 +148,7 @@ class DiabetesNLPPredictor:
         return features
     
     def count_symptom_severity(self, text: str) -> Tuple[int, float]:
-        """
-        Tính số lượng triệu chứng và mức độ nghiêm trọng
-        
-        Returns:
-            (symptom_count, severity_score)
-        """
+        """Tính số lượng triệu chứng và mức độ nghiêm trọng"""
         features = self.extract_symptom_features(text)
         symptom_count = sum(1 for v in features.values() if v > 0)
         severity_score = sum(features.values()) / (len(features) + 1)
@@ -161,39 +156,22 @@ class DiabetesNLPPredictor:
         return symptom_count, min(severity_score, 1.0)
     
     def predict_single_model(self, model_name: str, text: str) -> Dict:
-        """
-        Dự đoán bằng 1 NLP model cụ thể
-        
-        Model có thể là:
-        - Pipeline (vectorizer + classifier) - gọi trực tiếp với text
-        - Classifier riêng - cần vectorize text trước
-        
-        Args:
-            model_name: Tên model ('baseline' hoặc 'logistic_regression')
-            text: Mô tả triệu chứng (raw text)
-            
-        Returns:
-            Dict với prediction và confidence
-        """
+        """Dự đoán bằng 1 legacy NLP model cụ thể"""
         if not self.models:
-            raise ValueError("No NLP models loaded. Please check models/nlp/ directory.")
+            raise ValueError("No legacy NLP models loaded.")
         
         if model_name not in self.models:
             available = list(self.models.keys())
             raise ValueError(f"Model '{model_name}' not found. Available: {available}")
         
-        # Đảm bảo text là string
         if not isinstance(text, str):
             text = str(text)
         
         model = self.models[model_name]
         
         try:
-            # Thử gọi model với raw text (assume Pipeline)
-            # Pipeline sẽ tự vectorize bên trong
             prediction = int(model.predict([text])[0])
             
-            # Get probability nếu model hỗ trợ
             try:
                 proba = model.predict_proba([text])[0]
                 confidence = float(proba[1])
@@ -201,9 +179,6 @@ class DiabetesNLPPredictor:
                 confidence = float(prediction)
         
         except Exception as e:
-            # Nếu model là classifier riêng, thử vectorize
-            print(f"⚠️  Pipeline predict failed, trying with vectorization: {e}")
-            
             if self.vectorizer:
                 try:
                     features = self.vectorizer.transform([text]).toarray()
@@ -216,10 +191,9 @@ class DiabetesNLPPredictor:
                         confidence = float(prediction)
                 
                 except Exception as e2:
-                    print(f"❌ Vectorization also failed: {e2}")
+                    print(f"❌ Error: {e2}")
                     raise
             else:
-                # Nếu không có vectorizer, dùng symptom features
                 symptom_feats = self.extract_symptom_features(text)
                 features = np.array([[v for v in symptom_feats.values()]])
                 
@@ -233,7 +207,7 @@ class DiabetesNLPPredictor:
                         confidence = float(prediction)
                 
                 except Exception as e3:
-                    print(f"❌ Symptom features predict failed: {e3}")
+                    print(f"❌ Error: {e3}")
                     raise
         
         return {
@@ -246,14 +220,8 @@ class DiabetesNLPPredictor:
     def predict_from_symptoms(self, text: str) -> Dict:
         """
         Dự đoán từ mô tả triệu chứng
-        
-        Args:
-            text: Mô tả triệu chứng
-            
-        Returns:
-            Dict với kết quả từ tất cả NLP models
+        Ưu tiên PhoBERT nếu có, fallback về legacy models
         """
-        # Đảm bảo text là string
         if not isinstance(text, str):
             text = str(text)
         
@@ -264,16 +232,58 @@ class DiabetesNLPPredictor:
                 'predictions': [],
                 'ensemble_prediction': 0,
                 'ensemble_confidence': 0.0,
-                'risk_level': 'Không đủ thông tin'
+                'risk_level': 'Không đủ thông tin',
+                'method': 'None'
             }
         
-        if not self.models:
-            raise ValueError("No NLP models loaded")
+        # ============================================================
+        # ƯU TIÊN: Sử dụng PhoBERT nếu có
+        # ============================================================
+        if self.has_phobert and self.phobert_predictor:
+            try:
+                print("📊 Using PhoBERT for prediction...")
+                phobert_result = self.phobert_predictor.predict(text)
+                
+                if phobert_result['success']:
+                    return {
+                        'success': True,
+                        'symptom_count': 0,
+                        'severity_score': phobert_result['confidence'],
+                        'ensemble_prediction': phobert_result['outcome'],
+                        'ensemble_confidence': phobert_result['confidence'],
+                        'original_confidence': phobert_result['confidence'],
+                        'risk_level': 'Cao' if phobert_result['outcome'] == 1 else 'Thấp',
+                        'result': phobert_result['answer'],
+                        'individual_predictions': [{
+                            'model': 'viBERT (SentenceTransformer)',
+                            'result': phobert_result['answer'],
+                            'confidence': phobert_result['confidence']
+                        }],
+                        'input_text': text,
+                        'method': 'PhoBERT'
+                    }
+            except Exception as e:
+                print(f"⚠️ PhoBERT prediction failed: {e}")
+                print(f"   Falling back to legacy models...")
         
-        # Trích xuất triệu chứng
+        # ============================================================
+        # FALLBACK: Sử dụng legacy keyword-based models
+        # ============================================================
+        print("📊 Using legacy NLP models...")
+        
+        if not self.models:
+            return {
+                'success': False,
+                'error': 'Không có models có sẵn',
+                'predictions': [],
+                'ensemble_prediction': 0,
+                'ensemble_confidence': 0.0,
+                'risk_level': 'Lỗi',
+                'method': 'None'
+            }
+        
         symptom_count, severity = self.count_symptom_severity(text)
         
-        # Dự đoán từ tất cả models
         predictions = []
         confidences = []
         details = []
@@ -299,20 +309,18 @@ class DiabetesNLPPredictor:
                 'predictions': [],
                 'ensemble_prediction': 0,
                 'ensemble_confidence': 0.0,
-                'risk_level': 'Lỗi'
+                'risk_level': 'Lỗi',
+                'method': 'Legacy'
             }
         
-        # Ensemble prediction
         ensemble_pred = int(np.round(np.mean(predictions)))
         ensemble_conf = float(np.mean(confidences))
         
-        # Điều chỉnh confidence dựa vào severity
         if symptom_count > 0:
             adjusted_confidence = (ensemble_conf + severity) / 2
         else:
             adjusted_confidence = ensemble_conf
         
-        # Risk level
         if symptom_count == 0:
             risk_level = "Không có triệu chứng"
         elif adjusted_confidence < 0.3:
@@ -332,13 +340,12 @@ class DiabetesNLPPredictor:
             'risk_level': risk_level,
             'result': 'Có nguy cơ dựa trên triệu chứng' if ensemble_pred == 1 else 'Không có nguy cơ dựa trên triệu chứng',
             'individual_predictions': details,
-            'input_text': text
+            'input_text': text,
+            'method': 'Legacy Keyword-based'
         }
     
     def get_symptom_analysis(self, text: str) -> Dict:
-        """
-        Phân tích chi tiết các triệu chứng được nhận diện
-        """
+        """Phân tích chi tiết các triệu chứng được nhận diện"""
         processed_text = self.preprocess_text(text)
         analysis = {}
         
@@ -353,7 +360,6 @@ class DiabetesNLPPredictor:
         
         return analysis
 
-# Singleton instance
 _nlp_predictor_instance = None
 
 def get_nlp_predictor() -> DiabetesNLPPredictor:

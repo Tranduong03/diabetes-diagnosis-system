@@ -2,7 +2,6 @@
 Machine Learning Prediction Service
 Load và sử dụng các models đã train để dự đoán bệnh tiểu đường
 """
-
 import joblib
 import numpy as np
 import os
@@ -14,17 +13,17 @@ from sklearn.preprocessing import LabelEncoder
 class DiabetesMLPredictor:
     def __init__(self):
         """Khởi tạo predictor với các models đã train"""
-        self.models = {}          # Lưu các model đã load
-        self.scalers = {}         # Lưu scaler riêng theo từng model (nếu cần)
+        self.models = {}
+        self.scalers = {}
         self.models_dir = self._find_models_directory()
         self.load_models()
     
     def _find_models_directory(self) -> str:
         """Tìm thư mục models (cùng cấp với web/)"""
-        current_dir = Path(__file__).parent  # backend/ai/
-        backend_dir = current_dir.parent     # backend/
-        web_dir = backend_dir.parent         # web/
-        project_dir = web_dir.parent         # diabetes-diagnosis-system/
+        current_dir = Path(__file__).parent
+        backend_dir = current_dir.parent
+        web_dir = backend_dir.parent
+        project_dir = web_dir.parent
         models_dir = project_dir / "models"
         
         if models_dir.exists():
@@ -32,7 +31,7 @@ class DiabetesMLPredictor:
             return str(models_dir)
         else:
             fallback_dir = backend_dir / "models"
-            print(f"⚠️  Models directory not found at {models_dir}")
+            print(f"⚠️ Models directory not found at {models_dir}")
             print(f"   Using fallback: {fallback_dir}")
             fallback_dir.mkdir(exist_ok=True)
             return str(fallback_dir)
@@ -44,7 +43,6 @@ class DiabetesMLPredictor:
             print(f"📂 Loading models from: {self.models_dir}")
             print(f"{'='*60}\n")
             
-            # File model và scaler mapping
             model_patterns = {
                 'knn': ['diabetes_knn_model.pkl'],
                 'knn_smote': ['diabetes_knn_smote_model.pkl'],
@@ -54,7 +52,6 @@ class DiabetesMLPredictor:
             scaler_mapping = {
                 'knn': ['scaler.pkl', 'diabetes_knn_scaler.pkl', 'standard_scaler.pkl'],
                 'knn_smote': ['diabetes_knn_smote_scaler.pkl'],
-                # NB và ID3 không cần scaler
             }
             
             models_loaded = 0
@@ -64,12 +61,10 @@ class DiabetesMLPredictor:
                     model_path = os.path.join(self.models_dir, pattern)
                     if os.path.exists(model_path):
                         try:
-                            # Load model
                             self.models[model_name] = joblib.load(model_path)
                             print(f"✅ Loaded {model_name} from {pattern}")
                             models_loaded += 1
                             
-                            # Nếu model có scaler riêng
                             if model_name in scaler_mapping:
                                 for scaler_file in scaler_mapping[model_name]:
                                     scaler_path = os.path.join(self.models_dir, scaler_file)
@@ -82,7 +77,7 @@ class DiabetesMLPredictor:
                             print(f"❌ Error loading {pattern}: {e}")
             
             if models_loaded == 0:
-                print(f"\n⚠️  WARNING: No models loaded!")
+                print(f"\n⚠️ WARNING: No models loaded!")
                 print(f"   Please ensure model files exist in: {self.models_dir}")
             else:
                 print(f"\n✅ Total models loaded: {models_loaded}")
@@ -95,110 +90,77 @@ class DiabetesMLPredictor:
             raise
     
     def _prepare_data_for_id3(self, data: Dict) -> np.ndarray:
-        """
-        Chuẩn bị dữ liệu cho ID3 bằng cách binning (giống lúc train)
-        
-        Args:
-            data: Dictionary chứa raw numerical values
-            
-        Returns:
-            numpy array của binned features (encoded)
-        """
-        # Tạo dataframe từ dữ liệu input
+        """Chuẩn bị dữ liệu cho ID3 bằng cách binning"""
         df = pd.DataFrame([data])
         
-        # Binning theo đúng cách train
         df['Pregnancies_binned'] = pd.cut(
-            df['Pregnancies'], 
-            bins=[-0.1, 2, 6, 20], 
+            df['Pregnancies'],
+            bins=[-0.1, 2, 6, 20],
             labels=['Thấp', 'TB', 'Cao']
         )
         df['Glucose_binned'] = pd.cut(
-            df['Glucose'], 
-            bins=[0, 140, 200, 300], 
+            df['Glucose'],
+            bins=[0, 140, 200, 300],
             labels=['BT', 'Tiền', 'Tiểu']
         )
         df['BloodPressure_binned'] = pd.cut(
-            df['BloodPressure'], 
-            bins=[0, 80, 90, 150], 
+            df['BloodPressure'],
+            bins=[0, 80, 90, 150],
             labels=['BT', 'Cao1', 'Cao2']
         )
         df['SkinThickness_binned'] = pd.cut(
-            df['SkinThickness'], 
-            bins=[0, 20, 30, 100], 
+            df['SkinThickness'],
+            bins=[0, 20, 30, 100],
             labels=['Thấp', 'TB', 'Cao']
         )
         df['Insulin_binned'] = pd.cut(
-            df['Insulin'], 
-            bins=[0, 100, 200, 900], 
+            df['Insulin'],
+            bins=[0, 100, 200, 900],
             labels=['BT', 'Cao', 'Rất cao']
         )
         df['BMI_binned'] = pd.cut(
-            df['BMI'], 
-            bins=[0, 25, 30, 70], 
+            df['BMI'],
+            bins=[0, 25, 30, 70],
             labels=['BT', 'Thừa', 'Béo']
         )
         df['DiabetesPedigreeFunction_binned'] = pd.cut(
-            df['DiabetesPedigreeFunction'], 
-            bins=[0, 0.3, 0.6, 3], 
+            df['DiabetesPedigreeFunction'],
+            bins=[0, 0.3, 0.6, 3],
             labels=['Thấp', 'TB', 'Cao']
         )
         df['Age_binned'] = pd.cut(
-            df['Age'], 
-            bins=[0, 30, 50, 100], 
+            df['Age'],
+            bins=[0, 30, 50, 100],
             labels=['Trẻ', 'Trung', 'Già']
         )
         
-        # Lấy các feature binned
         binned_cols = [c for c in df.columns if c.endswith('_binned')]
         X_binned = df[binned_cols]
         
-        # Encode categorical features
         le = LabelEncoder()
         X_encoded = X_binned.apply(le.fit_transform)
         
         return X_encoded.values
     
     def preprocess_input(self, data: Dict, model_name: str) -> np.ndarray:
-        """
-        Tiền xử lý dữ liệu đầu vào theo từng model
-        
-        Args:
-            data: Dictionary chứa các features
-            model_name: Tên model
-            
-        Returns:
-            numpy array đã được chuẩn hóa (nếu model có scaler)
-        """
-        # Xử lý riêng cho ID3 (binning)
+        """Tiền xử lý dữ liệu đầu vào theo từng model"""
         if model_name == 'id3':
             return self._prepare_data_for_id3(data)
         
-        # Cho các model khác - raw features
         feature_order = [
-            'Pregnancies', 'Glucose', 'BloodPressure', 
-            'SkinThickness', 'Insulin', 'BMI', 
+            'Pregnancies', 'Glucose', 'BloodPressure',
+            'SkinThickness', 'Insulin', 'BMI',
             'DiabetesPedigreeFunction', 'Age'
         ]
         features = np.array([[float(data.get(f, 0)) for f in feature_order]])
         
-        # Chỉ KNN cần chuẩn hóa (mô hình dựa trên khoảng cách)
         if model_name in self.scalers:
             features = self.scalers[model_name].transform(features)
         
         return features
     
     def predict_single_model(self, model_name: str, data: Dict) -> Dict:
-        """
-        Dự đoán bằng 1 model cụ thể
-        
-        Args:
-            model_name: Tên model (vd: 'Knn', 'Naive Bayes', 'Decision Tree')
-            data: Dictionary chứa features
-            
-        Returns:
-            Dict với prediction và probability
-        """
+        """Dự đoán bằng 1 model cụ thể"""
         if not self.models:
             raise ValueError("No models loaded. Please check models directory.")
         
@@ -209,24 +171,18 @@ class DiabetesMLPredictor:
         model = self.models[model_name]
         features = self.preprocess_input(data, model_name)
         
-        # Predict
         prediction = int(model.predict(features)[0])
         
-        # Get probability nếu model hỗ trợ
         try:
             proba = model.predict_proba(features)[0]
-            confidence = float(proba[1])  # Probability của class 1
+            confidence = float(proba[1])
         except:
-            # Nếu model không hỗ trợ predict_proba (như Decision Tree có thể)
-            # Dùng decision_path để lấy confidence
             try:
                 if hasattr(model, 'decision_path'):
-                    # Lấy leaf node value
                     leaf_id = model.apply(features)
                     node_indicator = model.decision_path(features)
                     node_index = node_indicator.indices[node_indicator.indptr[-1] - 1]
                     
-                    # Lấy value từ node
                     if hasattr(model, 'tree_'):
                         values = model.tree_.value[node_index][0]
                         confidence = values[1] / (values[0] + values[1]) if (values[0] + values[1]) > 0 else float(prediction)
@@ -245,15 +201,7 @@ class DiabetesMLPredictor:
         }
     
     def predict_ensemble(self, data: Dict) -> Dict:
-        """
-        Dự đoán bằng ensemble (voting) từ tất cả models
-        
-        Args:
-            data: Dictionary chứa features
-            
-        Returns:
-            Dict với kết quả ensemble và chi tiết từng model
-        """
+        """Dự đoán bằng ensemble (voting) từ tất cả models"""
         if not self.models:
             raise ValueError("No models loaded. Please check models directory and ensure .pkl files exist.")
         
@@ -267,11 +215,9 @@ class DiabetesMLPredictor:
                 pred = int(model.predict(features)[0])
                 predictions.append(pred)
                 
-                # Get confidence
                 try:
                     conf = float(model.predict_proba(features)[0][1])
                 except:
-                    # Xử lý cho model không hỗ trợ predict_proba
                     try:
                         if hasattr(model, 'tree_'):
                             leaf_id = model.apply(features)
@@ -301,7 +247,6 @@ class DiabetesMLPredictor:
         ensemble_pred = int(np.round(np.mean(predictions)))
         ensemble_conf = float(np.mean(confidences))
         
-        # Risk level
         if ensemble_conf < 0.3:
             risk_level = "Thấp"
             risk_color = "success"
@@ -322,30 +267,7 @@ class DiabetesMLPredictor:
             'individual_predictions': details,
             'input_data': data
         }
-    
-    def get_decision_tree_rules(self, data: Dict) -> str:
-        """
-        Tạo giải thích theo dạng Decision Tree rules
-        """
-        glucose = data.get('Glucose', 0)
-        bmi = data.get('BMI', 0)
-        age = data.get('Age', 0)
-        
-        rules = []
-        
-        if glucose > 140:
-            rules.append(f"Glucose cao ({glucose} > 140)")
-        if bmi > 30:
-            rules.append(f"BMI cao ({bmi} > 30)")
-        if age > 45:
-            rules.append(f"Tuổi cao ({age} > 45)")
-        
-        if rules:
-            return "Các yếu tố nguy cơ: " + ", ".join(rules)
-        else:
-            return "Các chỉ số trong giới hạn bình thường"
 
-# Singleton instance
 _predictor_instance = None
 
 def get_predictor() -> DiabetesMLPredictor:

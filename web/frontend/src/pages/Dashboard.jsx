@@ -111,21 +111,18 @@ const Dashboard = () => {
               <div className="action-icon dm">📋</div>
               <h3>Chẩn đoán mới</h3>
               <p>Thực hiện chẩn đoán nguy cơ bệnh tiểu đường</p>
-              <div className="chip dm">DM</div>
             </div>
 
             <div className="result-card action-card" onClick={() => navigate('/history')}>
               <div className="action-icon ml">📊</div>
               <h3>Lịch sử chẩn đoán</h3>
               <p>Xem lại các kết quả chẩn đoán trước đây</p>
-              <div className="chip ml">ML</div>
             </div>
 
             <div className="result-card action-card" onClick={() => navigate('/info')}>
               <div className="action-icon nlp">📚</div>
               <h3>Thông tin y tế</h3>
               <p>Tìm hiểu về bệnh tiểu đường và phòng ngừa</p>
-              <div className="chip nlp">NLP</div>
             </div>
 
             <div className="result-card action-card" onClick={() => navigate('/settings')}>
