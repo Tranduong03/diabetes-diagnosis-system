@@ -127,7 +127,7 @@ const Login = () => {
             <div className="demo-grid">
               <div className="demo-item">
                 <span className="chip admin">Admin</span>
-                <code>admin / admin123</code>
+                <code>Admin</code>
               </div>
               <div className="demo-item">
                 <span className="chip user">User</span>

@@ -1,20 +1,17 @@
 # Bỏ qua thư mục môi trường ảo Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.env
+
+# Virtual environment
+.venv/
+venv/
+web/backend/venv/
+
+
 .venv/
 test/lab01
 test/lab02
 test/ML
-
-# Virtual environment
-venv/
-.env/
-.env
-
-# Python env
-__pycache__/
-*.pyc
-
-# Backend environment
-web/backend/venv/
-web/backend/.env
-
-*.pth
