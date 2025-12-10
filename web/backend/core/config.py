@@ -11,7 +11,8 @@ class Settings:
     # Database - Thay đổi sang SQL Server
     DATABASE_URL: str = os.getenv(
         "DATABASE_URL", 
-        "mssql+pyodbc://sa:YourPassword@localhost/diabetes_db?driver=ODBC+Driver+17+for+SQL+Server"
+        "mssql+pyodbc://@localhost/diabetes_db?driver=ODBC+Driver+17+for+SQL+Server&trusted_connection=yes"
+        # "mssql+pyodbc://sa:YourPassword@localhost/diabetes_db?driver=ODBC+Driver+17+for+SQL+Server"
     )
     
     # Security
