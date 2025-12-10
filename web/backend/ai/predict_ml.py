@@ -8,6 +8,8 @@ import numpy as np
 import os
 from typing import Dict, List
 from pathlib import Path
+import pandas as pd
+from sklearn.preprocessing import LabelEncoder
 
 class DiabetesMLPredictor:
     def __init__(self):
@@ -47,7 +49,7 @@ class DiabetesMLPredictor:
                 'knn': ['diabetes_knn_model.pkl'],
                 'knn_smote': ['diabetes_knn_smote_model.pkl'],
                 'Naive Bayes': ['diabetes_nb_model.pkl'],
-                'ID3': ['diabetes_id3_model.pkl'],
+                'id3': ['diabetes_id3_model.pkl'],
             }
             scaler_mapping = {
                 'knn': ['scaler.pkl', 'diabetes_knn_scaler.pkl', 'standard_scaler.pkl'],
@@ -92,6 +94,71 @@ class DiabetesMLPredictor:
             print(f"❌ Error loading models: {e}")
             raise
     
+    def _prepare_data_for_id3(self, data: Dict) -> np.ndarray:
+        """
+        Chuẩn bị dữ liệu cho ID3 bằng cách binning (giống lúc train)
+        
+        Args:
+            data: Dictionary chứa raw numerical values
+            
+        Returns:
+            numpy array của binned features (encoded)
+        """
+        # Tạo dataframe từ dữ liệu input
+        df = pd.DataFrame([data])
+        
+        # Binning theo đúng cách train
+        df['Pregnancies_binned'] = pd.cut(
+            df['Pregnancies'], 
+            bins=[-0.1, 2, 6, 20], 
+            labels=['Thấp', 'TB', 'Cao']
+        )
+        df['Glucose_binned'] = pd.cut(
+            df['Glucose'], 
+            bins=[0, 140, 200, 300], 
+            labels=['BT', 'Tiền', 'Tiểu']
+        )
+        df['BloodPressure_binned'] = pd.cut(
+            df['BloodPressure'], 
+            bins=[0, 80, 90, 150], 
+            labels=['BT', 'Cao1', 'Cao2']
+        )
+        df['SkinThickness_binned'] = pd.cut(
+            df['SkinThickness'], 
+            bins=[0, 20, 30, 100], 
+            labels=['Thấp', 'TB', 'Cao']
+        )
+        df['Insulin_binned'] = pd.cut(
+            df['Insulin'], 
+            bins=[0, 100, 200, 900], 
+            labels=['BT', 'Cao', 'Rất cao']
+        )
+        df['BMI_binned'] = pd.cut(
+            df['BMI'], 
+            bins=[0, 25, 30, 70], 
+            labels=['BT', 'Thừa', 'Béo']
+        )
+        df['DiabetesPedigreeFunction_binned'] = pd.cut(
+            df['DiabetesPedigreeFunction'], 
+            bins=[0, 0.3, 0.6, 3], 
+            labels=['Thấp', 'TB', 'Cao']
+        )
+        df['Age_binned'] = pd.cut(
+            df['Age'], 
+            bins=[0, 30, 50, 100], 
+            labels=['Trẻ', 'Trung', 'Già']
+        )
+        
+        # Lấy các feature binned
+        binned_cols = [c for c in df.columns if c.endswith('_binned')]
+        X_binned = df[binned_cols]
+        
+        # Encode categorical features
+        le = LabelEncoder()
+        X_encoded = X_binned.apply(le.fit_transform)
+        
+        return X_encoded.values
+    
     def preprocess_input(self, data: Dict, model_name: str) -> np.ndarray:
         """
         Tiền xử lý dữ liệu đầu vào theo từng model
@@ -103,6 +170,11 @@ class DiabetesMLPredictor:
         Returns:
             numpy array đã được chuẩn hóa (nếu model có scaler)
         """
+        # Xử lý riêng cho ID3 (binning)
+        if model_name == 'id3':
+            return self._prepare_data_for_id3(data)
+        
+        # Cho các model khác - raw features
         feature_order = [
             'Pregnancies', 'Glucose', 'BloodPressure', 
             'SkinThickness', 'Insulin', 'BMI', 
@@ -110,7 +182,7 @@ class DiabetesMLPredictor:
         ]
         features = np.array([[float(data.get(f, 0)) for f in feature_order]])
         
-        # Nếu model có scaler → scale input
+        # Chỉ KNN cần chuẩn hóa (mô hình dựa trên khoảng cách)
         if model_name in self.scalers:
             features = self.scalers[model_name].transform(features)
         
@@ -121,7 +193,7 @@ class DiabetesMLPredictor:
         Dự đoán bằng 1 model cụ thể
         
         Args:
-            model_name: Tên model (vd: 'knn', 'random_forest')
+            model_name: Tên model (vd: 'Knn', 'Naive Bayes', 'Decision Tree')
             data: Dictionary chứa features
             
         Returns:
@@ -145,7 +217,25 @@ class DiabetesMLPredictor:
             proba = model.predict_proba(features)[0]
             confidence = float(proba[1])  # Probability của class 1
         except:
-            confidence = float(prediction)
+            # Nếu model không hỗ trợ predict_proba (như Decision Tree có thể)
+            # Dùng decision_path để lấy confidence
+            try:
+                if hasattr(model, 'decision_path'):
+                    # Lấy leaf node value
+                    leaf_id = model.apply(features)
+                    node_indicator = model.decision_path(features)
+                    node_index = node_indicator.indices[node_indicator.indptr[-1] - 1]
+                    
+                    # Lấy value từ node
+                    if hasattr(model, 'tree_'):
+                        values = model.tree_.value[node_index][0]
+                        confidence = values[1] / (values[0] + values[1]) if (values[0] + values[1]) > 0 else float(prediction)
+                    else:
+                        confidence = float(prediction)
+                else:
+                    confidence = float(prediction)
+            except:
+                confidence = float(prediction)
         
         return {
             'model': model_name,
@@ -177,10 +267,23 @@ class DiabetesMLPredictor:
                 pred = int(model.predict(features)[0])
                 predictions.append(pred)
                 
+                # Get confidence
                 try:
                     conf = float(model.predict_proba(features)[0][1])
                 except:
-                    conf = float(pred)
+                    # Xử lý cho model không hỗ trợ predict_proba
+                    try:
+                        if hasattr(model, 'tree_'):
+                            leaf_id = model.apply(features)
+                            node_indicator = model.decision_path(features)
+                            node_index = node_indicator.indices[node_indicator.indptr[-1] - 1]
+                            values = model.tree_.value[node_index][0]
+                            conf = values[1] / (values[0] + values[1]) if (values[0] + values[1]) > 0 else float(pred)
+                        else:
+                            conf = float(pred)
+                    except:
+                        conf = float(pred)
+                
                 confidences.append(conf)
                 
                 details.append({
