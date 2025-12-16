@@ -45,9 +45,9 @@ class DiabetesMLPredictor:
             
             model_patterns = {
                 'knn': ['diabetes_knn_model.pkl'],
-                'knn_smote': ['diabetes_knn_smote_model.pkl'],
+                # 'knn_smote': ['diabetes_knn_smote_model.pkl'],
                 'Naive Bayes': ['diabetes_nb_model.pkl'],
-                'id3': ['diabetes_id3_model.pkl'],
+                # 'id3': ['diabetes_id3_model.pkl'],
             }
             scaler_mapping = {
                 'knn': ['scaler.pkl', 'diabetes_knn_scaler.pkl', 'standard_scaler.pkl'],

@@ -1,5 +1,5 @@
 """
-PhoBERT NLP Adapter - Simple Version
+PhoBERT NLP Adapter - Fixed Error Handling
 Tích hợp mô hình SentenceTransformer vào hệ thống predict_nlp
 """
 import joblib
@@ -17,7 +17,7 @@ class PhoBERTPredictor:
         self.stage_clf = None
         self.config = None
         
-        self.load_models()
+        self.is_loaded = self.load_models()
     
     def _find_nlp_models_directory(self) -> str:
         """Tìm thư mục NLP models"""
@@ -37,8 +37,13 @@ class PhoBERTPredictor:
             fallback_dir.mkdir(parents=True, exist_ok=True)
             return str(fallback_dir)
     
-    def load_models(self):
-        """Load PhoBERT models và config"""
+    def load_models(self) -> bool:
+        """
+        Load PhoBERT models và config
+        
+        Returns:
+            bool: True nếu load thành công, False nếu thất bại
+        """
         try:
             print(f"\n{'='*70}")
             print(f"📂 Loading PhoBERT models from: {self.models_dir}")
@@ -60,6 +65,7 @@ class PhoBERTPredictor:
                 print(f"\n{'='*70}\n")
                 return False
             
+            # Load config
             self.config = joblib.load(config_path)
             print(f"✅ Loaded config from phobert_config.pkl")
             print(f"   Model: {self.config.get('model_name')}")
@@ -67,14 +73,26 @@ class PhoBERTPredictor:
             print(f"   Outcome accuracy: {self.config.get('outcome_accuracy'):.4f}")
             print(f"   Stage accuracy: {self.config.get('stage_accuracy'):.4f}\n")
             
+            # Load SentenceTransformer
             model_name = self.config.get('model_name', 'VoVanPhuc/sup-SimCSE-VietNamese-phobert-base')
             print(f"📥 Loading SentenceTransformer: {model_name}")
             print(f"   (This will download ~400MB on first run - please wait...)\n")
             
-            from sentence_transformers import SentenceTransformer
-            self.model = SentenceTransformer(model_name)
-            print(f"✅ SentenceTransformer loaded successfully\n")
+            try:
+                from sentence_transformers import SentenceTransformer
+                self.model = SentenceTransformer(model_name)
+                print(f"✅ SentenceTransformer loaded successfully\n")
+            except ImportError:
+                print(f"❌ ERROR: sentence-transformers not installed!")
+                print(f"   Please install: pip install sentence-transformers")
+                print(f"{'='*70}\n")
+                return False
+            except Exception as e:
+                print(f"❌ ERROR loading SentenceTransformer: {e}")
+                print(f"{'='*70}\n")
+                return False
             
+            # Load classifiers
             self.outcome_clf = joblib.load(outcome_path)
             print(f"✅ Loaded phobert_outcome_clf.pkl")
             
@@ -113,10 +131,10 @@ class PhoBERTPredictor:
                 'answer': 'Không có dữ liệu đầu vào'
             }
         
-        if not self.model or not self.outcome_clf or not self.stage_clf:
+        if not self.is_loaded or not self.model or not self.outcome_clf or not self.stage_clf:
             return {
                 'success': False,
-                'error': 'PhoBERT models not loaded',
+                'error': 'PhoBERT models not loaded. Please install sentence-transformers and ensure model files exist.',
                 'outcome': 0,
                 'stage': 0,
                 'confidence': 0.0,
@@ -124,8 +142,10 @@ class PhoBERTPredictor:
             }
         
         try:
+            # Encode text
             embedding = self.model.encode([text])
             
+            # Predict outcome
             outcome = int(self.outcome_clf.predict(embedding)[0])
             outcome_proba = self.outcome_clf.predict_proba(embedding)[0]
             outcome_confidence = float(max(outcome_proba))
@@ -143,6 +163,7 @@ class PhoBERTPredictor:
                     }
                 }
             
+            # Predict stage
             stage = int(self.stage_clf.predict(embedding)[0])
             stage_proba = self.stage_clf.predict_proba(embedding)[0]
             stage_confidence = float(max(stage_proba))
@@ -193,8 +214,11 @@ if __name__ == "__main__":
     try:
         predictor = get_phobert_predictor()
         
-        test_text = "Tôi cảm thấy mệt mỏi, khát nước nhiều và đi tiểu thường xuyên"
-        result = predictor.predict(test_text)
-        print(f"\n✅ Test result:\n{result}")
+        if predictor.is_loaded:
+            test_text = "Tôi cảm thấy mệt mỏi, khát nước nhiều và đi tiểu thường xuyên"
+            result = predictor.predict(test_text)
+            print(f"\n✅ Test result:\n{result}")
+        else:
+            print(f"\n❌ PhoBERT models not loaded. Cannot test.")
     except Exception as e:
         print(f"❌ Error: {e}")
