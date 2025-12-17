@@ -4,6 +4,7 @@ from core.config import settings
 from database.base import init_db
 from auth.routes import router as auth_router
 from ai.routes import router as ai_router
+from chatbot.routes import router as chatbot_router
 
 # Khởi tạo app
 app = FastAPI(
@@ -30,6 +31,8 @@ async def startup_event():
 # Include routers với prefix API v1
 app.include_router(auth_router, prefix=settings.API_V1_STR)
 app.include_router(ai_router, prefix=settings.API_V1_STR)
+app.include_router(chatbot_router, prefix=settings.API_V1_STR)
+
 
 # Routes cơ bản
 @app.get("/")

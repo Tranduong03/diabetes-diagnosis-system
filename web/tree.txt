@@ -3,6 +3,8 @@ D:\project2\diabetes-diagnosis-system\web
 │   ├── .env
 │   ├── README.md
 │   ├── ai
+│   │   ├── chatbot.py
+│   │   ├── faq_knowledge_base.py
 │   │   ├── phobert_adapter.py
 │   │   ├── predict_ml.py
 │   │   ├── predict_nlp.py
@@ -13,6 +15,8 @@ D:\project2\diabetes-diagnosis-system\web
 │   │   ├── routes.py
 │   │   ├── schemas.py
 │   │   └── services.py
+│   ├── chatbot
+│   │   └── routes.py
 │   ├── core
 │   │   ├── config.py
 │   │   ├── security.py
@@ -21,6 +25,7 @@ D:\project2\diabetes-diagnosis-system\web
 │   │   ├── base.py
 │   │   ├── crud.py
 │   │   └── models.py
+│   ├── init_prediction_history.py
 │   ├── main.py
 │   ├── requirements.txt
 │   ├── test_full.py
@@ -663,6 +668,15 @@ D:\project2\diabetes-diagnosis-system\web
 │   │   │   ├── README.md
 │   │   │   ├── index.js
 │   │   │   └── package.json
+│   │   ├── lucide-react
+│   │   │   ├── LICENSE
+│   │   │   ├── README.md
+│   │   │   ├── dist
+│   │   │   ├── dynamic.d.ts
+│   │   │   ├── dynamic.mjs
+│   │   │   ├── dynamicIconImports.d.ts
+│   │   │   ├── dynamicIconImports.mjs
+│   │   │   └── package.json
 │   │   ├── magic-string
 │   │   │   ├── LICENSE
 │   │   │   ├── README.md
@@ -998,6 +1012,8 @@ D:\project2\diabetes-diagnosis-system\web
 │   │   ├── App.jsx
 │   │   ├── assets
 │   │   │   └── react.svg
+│   │   ├── components
+│   │   │   └── Chatbot.jsx
 │   │   ├── index.css
 │   │   ├── main.jsx
 │   │   ├── pages
@@ -1015,4 +1031,5 @@ D:\project2\diabetes-diagnosis-system\web
 │   │       └── AppRouter.jsx
 │   ├── tailwind.config.js
 │   └── vite.config.js
-└── tree.py
+├── tree.py
+└── tree.txt
