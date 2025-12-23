@@ -7,6 +7,7 @@ export default function Chatbot() {
   const [isTyping, setIsTyping] = useState(false);
   const [quickQuestions, setQuickQuestions] = useState([]);
   const messagesEndRef = useRef(null);
+  const textareaRef = useRef(null);
 
   // --- Logic code giữ nguyên ---
   useEffect(() => {
@@ -21,6 +22,14 @@ export default function Chatbot() {
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages, isTyping]);
+
+  // Tự động điều chỉnh chiều cao textarea
+  useEffect(() => {
+    if (textareaRef.current) {
+      textareaRef.current.style.height = 'auto';
+      textareaRef.current.style.height = `${Math.min(textareaRef.current.scrollHeight, 120)}px`;
+    }
+  }, [input]);
 
   const fetchQuickQuestions = async () => {
     try {
@@ -90,7 +99,7 @@ export default function Chatbot() {
           {/* Header */}
           <div className="chatbot-header">
             <div className="header-info">
-              <div className="avatar">🤖</div>
+              <div className="avatar">🩺</div>
               <div>
                 <h3>Trợ lý AI</h3>
                 <span className="status">Sẵn sàng hỗ trợ</span>
@@ -158,6 +167,7 @@ export default function Chatbot() {
           <div className="chatbot-footer">
             <div className="input-group">
               <textarea
+                ref={textareaRef}
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
                 onKeyPress={handleKeyPress}
@@ -435,11 +445,13 @@ export default function Chatbot() {
           background: #dbeafe;
         }
 
-        /* Footer Input */
+        /* Footer Input - ĐÃ CHỈNH SỬA */
         .chatbot-footer {
           padding: 12px 16px;
           background: white;
           border-top: 1px solid #e5e7eb;
+          position: relative;
+          z-index: 10;
         }
 
         .input-group {
@@ -448,9 +460,10 @@ export default function Chatbot() {
           background: #f9fafb;
           border: 1px solid #e5e7eb;
           border-radius: 24px;
-          padding: 4px 6px 4px 16px;
-          align-items: center;
-          transition: border-color 0.2s;
+          padding: 8px 8px 8px 16px;
+          align-items: flex-end;
+          transition: all 0.2s;
+          min-height: 48px;
         }
 
         .input-group:focus-within {
@@ -459,27 +472,43 @@ export default function Chatbot() {
           box-shadow: 0 0 0 2px rgba(59,130,246,0.1);
         }
 
+        /* TEXTAREA - ĐÃ TỐI ƯU */
         .input-group textarea {
           flex: 1;
           border: none;
           background: transparent;
           resize: none;
           outline: none;
-          font-size: 14px; /* Tăng nhẹ size lên 1 xíu cho dễ đọc */
-          color: #111827;  /* Màu đen đậm (thay vì màu xám mặc định) */
-          font-weight: 350; /* Chữ đậm hơn một chút (Medium) */
-          opacity: 1;       /* Đảm bảo không bị trong suốt */
-          webkit-text-fill-color: #111827; /* Fix lỗi mờ trên một số trình duyệt Safari/iOS */
-          height: 24px;
-          padding: 4px 0;
-          line-height: 24px;
+          font-size: 14px;
+          color: #111827;
+          font-weight: 400;
+          min-height: 20px;
+          max-height: 120px;
+          padding: 0;
+          line-height: 20px;
           font-family: inherit;
+          overflow-y: auto;
+          box-sizing: border-box;
+          /* Quan trọng: Tự động co giãn */
+          height: auto;
+          transition: height 0.2s ease;
         }
-          .input-group textarea::placeholder {
-           color: #9ca3af; /* Màu xám nhạt cho placeholder */
-           font-weight: 400;
-}
 
+        .input-group textarea::placeholder {
+          color: #9ca3af;
+          font-weight: 400;
+        }
+
+        /* Scrollbar cho textarea khi nhiều dòng */
+        .input-group textarea::-webkit-scrollbar {
+          width: 4px;
+        }
+        .input-group textarea::-webkit-scrollbar-thumb {
+          background-color: #cbd5e1;
+          border-radius: 2px;
+        }
+
+        /* Nút gửi */
         .input-group button {
           width: 36px;
           height: 36px;
@@ -493,11 +522,14 @@ export default function Chatbot() {
           justify-content: center;
           font-size: 14px;
           transition: all 0.2s;
+          flex-shrink: 0;
+          margin-bottom: 2px;
         }
 
         .input-group button:disabled {
           background: #d1d5db;
           cursor: not-allowed;
+          transform: none !important;
         }
         
         .input-group button:not(:disabled):hover {
@@ -534,6 +566,22 @@ export default function Chatbot() {
         @keyframes fadeIn {
           from { opacity: 0; transform: translateY(10px); }
           to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Responsive cho mobile */
+        @media (max-width: 480px) {
+          .chatbot-window {
+            width: 100vw;
+            height: 100vh;
+            border-radius: 0;
+            bottom: 0;
+            right: 0;
+          }
+          
+          .chatbot-toggle {
+            bottom: 20px;
+            right: 20px;
+          }
         }
       `}</style>
     </>

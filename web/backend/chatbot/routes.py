@@ -1,11 +1,11 @@
 """
-Chatbot API Routes
-API endpoints cho FAQ chatbot
+Chatbot API Routes - Updated with Semantic Search
+API endpoints cho FAQ chatbot với PhoBERT embeddings
 """
 from fastapi import APIRouter, HTTPException, Depends
 from pydantic import BaseModel, Field
 from typing import Optional, List, Dict
-from ai.chatbot import get_chatbot
+from ai.chatbot import get_semantic_chatbot
 
 router = APIRouter(prefix="/chatbot", tags=["Chatbot"])
 
@@ -19,10 +19,16 @@ class ChatRequest(BaseModel):
     class Config:
         json_schema_extra = {
             "example": {
-                "message": "Triệu chứng của bệnh tiểu đường là gì?",
+                "message": "Các dấu hiệu nhận biết bị tiểu đường là gì?",
                 "session_id": "user_123_session_456"
             }
         }
+
+class TopMatchInfo(BaseModel):
+    """Thông tin về FAQ match"""
+    question: str
+    score: float
+    category: Optional[str] = None
 
 class ChatResponse(BaseModel):
     """Response từ chatbot"""
@@ -31,23 +37,37 @@ class ChatResponse(BaseModel):
     confidence: float
     source: str
     category: Optional[str]
+    method: str  # "semantic_search", "rule_based", etc.
     related_questions: List[str]
     suggestions: List[str]
+    top_matches: List[TopMatchInfo]  # Top 3 similar FAQs
 
 class CategoryResponse(BaseModel):
     """Response cho danh sách categories"""
     success: bool
     categories: Dict[str, List[str]]
 
+class FeedbackRequest(BaseModel):
+    """Request body cho feedback"""
+    question: str
+    answer_helpful: bool
+    comment: Optional[str] = None
+
 # ============ ROUTES ============
 
 @router.post("/chat", response_model=ChatResponse)
 async def chat_with_bot(request: ChatRequest):
     """
-    💬 Chat với FAQ Chatbot
+    💬 Chat với FAQ Chatbot (Semantic Search với PhoBERT)
     
-    Chatbot sẽ trả lời dựa trên knowledge base về bệnh tiểu đường.
-    Không cần đăng nhập.
+    Chatbot sử dụng PhoBERT embeddings để tìm kiếm dựa trên ngữ nghĩa,
+    hiểu được ý nghĩa câu hỏi tốt hơn so với keyword matching.
+    
+    Features:
+    - Semantic search với PhoBERT
+    - Cosine similarity
+    - Top-3 similar FAQs
+    - Confidence scoring
     
     Args:
         message: Câu hỏi của user (1-500 ký tự)
@@ -60,14 +80,19 @@ async def chat_with_bot(request: ChatRequest):
             "confidence": 0.85,
             "source": "faq_001",
             "category": "Triệu chứng",
+            "method": "semantic_search",
             "related_questions": [...],
-            "suggestions": [...]
+            "suggestions": [...],
+            "top_matches": [
+                {"question": "...", "score": 0.85, "category": "..."},
+                ...
+            ]
         }
     """
     try:
-        chatbot = get_chatbot()
+        chatbot = get_semantic_chatbot()
         
-        # Chat
+        # Chat with semantic search
         response = chatbot.chat(
             user_message=request.message,
             session_id=request.session_id
@@ -77,6 +102,9 @@ async def chat_with_bot(request: ChatRequest):
         
     except Exception as e:
         print(f"❌ Chatbot error: {e}")
+        import traceback
+        traceback.print_exc()
+        
         raise HTTPException(
             status_code=500, 
             detail="Xin lỗi, chatbot gặp lỗi. Vui lòng thử lại."
@@ -88,20 +116,9 @@ async def get_categories():
     📋 Lấy danh sách tất cả categories và questions
     
     Trả về tất cả các chủ đề và câu hỏi mà chatbot có thể trả lời.
-    Không cần đăng nhập.
-    
-    Returns:
-        {
-            "success": True,
-            "categories": {
-                "Triệu chứng": ["Câu hỏi 1", "Câu hỏi 2", ...],
-                "Chẩn đoán": [...],
-                ...
-            }
-        }
     """
     try:
-        chatbot = get_chatbot()
+        chatbot = get_semantic_chatbot()
         categories = chatbot.get_all_categories()
         
         return {
@@ -121,7 +138,7 @@ async def chatbot_health():
     Kiểm tra xem chatbot có hoạt động không.
     """
     try:
-        chatbot = get_chatbot()
+        chatbot = get_semantic_chatbot()
         
         # Test với câu hỏi đơn giản
         test_response = chatbot.chat("Xin chào")
@@ -130,6 +147,9 @@ async def chatbot_health():
             "success": True,
             "status": "healthy",
             "knowledge_base_size": len(chatbot.knowledge_base),
+            "embeddings_loaded": chatbot.faq_embeddings is not None,
+            "embedding_dimension": chatbot.faq_embeddings.shape[1] if chatbot.faq_embeddings is not None else 0,
+            "model_loaded": chatbot.model is not None,
             "test_confidence": test_response['confidence']
         }
         
@@ -216,21 +236,74 @@ async def get_quick_questions():
     }
 
 class FeedbackRequest(BaseModel):
+    """Request body cho feedback"""
     question: str
     answer_helpful: bool
     comment: Optional[str] = None
 
 @router.post("/feedback")
 async def submit_feedback(request: FeedbackRequest):
-    print("="*60)
-    print("📝 CHATBOT FEEDBACK")
+    """
+    📝 Gửi feedback về câu trả lời của chatbot
+    
+    Giúp cải thiện chatbot trong tương lai.
+    """
+    # TODO: Lưu feedback vào database để phân tích sau
+    
+    print(f"\n{'='*60}")
+    print(f"📝 CHATBOT FEEDBACK")
+    print(f"{'='*60}")
     print(f"Question: {request.question}")
     print(f"Helpful: {request.answer_helpful}")
     if request.comment:
         print(f"Comment: {request.comment}")
-    print("="*60)
-
+    print(f"{'='*60}\n")
+    
     return {
         "success": True,
         "message": "Cảm ơn bạn đã đóng góp ý kiến!"
     }
+
+@router.post("/refresh-embeddings")
+async def refresh_embeddings():
+    """
+    🔄 Refresh embeddings (sau khi thêm FAQ mới)
+    
+    Admin endpoint - gọi khi thêm/sửa/xóa FAQs trong knowledge base.
+    """
+    try:
+        chatbot = get_semantic_chatbot()
+        chatbot.refresh_embeddings()
+        
+        return {
+            "success": True,
+            "message": "Embeddings refreshed successfully",
+            "total_embeddings": len(chatbot.faq_embeddings)
+        }
+        
+    except Exception as e:
+        print(f"❌ Error refreshing embeddings: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@router.get("/model-info")
+async def get_model_info():
+    """
+    ℹ️ Thông tin về model đang sử dụng
+    """
+    try:
+        chatbot = get_semantic_chatbot()
+        
+        return {
+            "success": True,
+            "model_name": "VoVanPhuc/sup-SimCSE-VietNamese-phobert-base",
+            "model_type": "SentenceTransformer",
+            "embedding_dimension": 768,
+            "knowledge_base_size": len(chatbot.knowledge_base),
+            "embeddings_cached": chatbot.embeddings_cache_path.exists() if chatbot.embeddings_cache_path else False,
+            "method": "Semantic Search (Cosine Similarity)",
+            "confidence_threshold": 0.4
+        }
+        
+    except Exception as e:
+        print(f"❌ Error: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
