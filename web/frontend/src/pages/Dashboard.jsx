@@ -22,136 +22,72 @@ const Dashboard = () => {
   if (!user) return <div className="loading">Đang tải...</div>;
 
   return (
-    <div className="dashboard-container">
-      <h1 className="main-title">Dashboard</h1>
+  <div className="dashboard-container">
 
-      {/* Header Card */}
-      <div className="dashboard-wrapper">
-        <section className="card header-card">
-          <div className="title">
-            <div className="logo">👤</div>
-            <div className="user-info">
-              <h1>Xin chào, {user.full_name || user.username}!</h1>
-              <p className="lead">
-                Chào mừng đến với hệ thống chẩn đoán bệnh tiểu đường
-              </p>
-            </div>
-            <button className="logout-btn" onClick={handleLogout}>
-              Đăng xuất
-            </button>
-          </div>
-        </section>
-
-        {/* Main Content Grid */}
-        <div className="dashboard-grid">
-          {/* Left Column - User Info */}
-          <aside className="info-panel">
-            <div className="result-card">
-              <div className="card-header">
-                <h3>Thông tin cá nhân</h3>
-                <div className="chip user">User</div>
-              </div>
-              <div className="info-list">
-                <div className="info-item">
-                  <span className="info-label">Tên đăng nhập</span>
-                  <span className="info-value">{user.username}</span>
-                </div>
-                <div className="info-item">
-                  <span className="info-label">Email</span>
-                  <span className="info-value">{user.email}</span>
-                </div>
-                <div className="info-item">
-                  <span className="info-label">Họ và tên</span>
-                  <span className="info-value">{user.full_name || 'Chưa cập nhật'}</span>
-                </div>
-                <div className="info-item">
-                  <span className="info-label">Vai trò</span>
-                  <span className="info-value">
-                    <span className="chip user">{user.role === 'admin' ? 'Admin' : 'User'}</span>
-                  </span>
-                </div>
-                <div className="info-item">
-                  <span className="info-label">Trạng thái</span>
-                  <span className="info-value">
-                    <span className="chip success">Hoạt động</span>
-                  </span>
-                </div>
-              </div>
-            </div>
-
-            {/* Statistics */}
-            <div className="result-card">
-              <div className="card-header">
-                <h3>Thống kê</h3>
-              </div>
-              <div className="stats-grid">
-                <div className="stat-item">
-                  <div className="stat-value">0</div>
-                  <div className="stat-label">Lượt chẩn đoán</div>
-                </div>
-                <div className="stat-item">
-                  <div className="stat-value">0</div>
-                  <div className="stat-label">Kết quả bình thường</div>
-                </div>
-                <div className="stat-item">
-                  <div className="stat-value">0</div>
-                  <div className="stat-label">Cần theo dõi</div>
-                </div>
-                <div className="stat-item">
-                  <div className="stat-value">0</div>
-                  <div className="stat-label">Nguy cơ cao</div>
-                </div>
-              </div>
-            </div>
-          </aside>
-
-          {/* Right Column - Actions */}
-          <section className="actions-panel">
-            <div className="result-card action-card" onClick={() => navigate('/diagnosis')}>
-              <div className="action-icon dm">📋</div>
-              <h3>Chẩn đoán mới</h3>
-              <p>Thực hiện chẩn đoán nguy cơ bệnh tiểu đường</p>
-            </div>
-
-            <div className="result-card action-card" onClick={() => navigate('/history')}>
-              <div className="action-icon ml">📊</div>
-              <h3>Lịch sử chẩn đoán</h3>
-              <p>Xem lại các kết quả chẩn đoán trước đây</p>
-            </div>
-
-            <div className="result-card action-card" onClick={() => navigate('/info')}>
-              <div className="action-icon nlp">📚</div>
-              <h3>Thông tin y tế</h3>
-              <p>Tìm hiểu về bệnh tiểu đường và phòng ngừa</p>
-            </div>
-
-            <div className="result-card action-card" onClick={() => navigate('/settings')}>
-              <div className="action-icon final">⚙️</div>
-              <h3>Cài đặt</h3>
-              <p>Quản lý thông tin cá nhân và tài khoản</p>
-              <div className="chip final">Settings</div>
-            </div>
-          </section>
-        </div>
-
-        {/* Recent Activity */}
-        <section className="card activity-card">
-          <div className="card-header">
-            <h3>Hoạt động gần đây</h3>
-          </div>
-          <div className="activity-list">
-            <div className="activity-item">
-              <div className="activity-icon">📝</div>
-              <div className="activity-content">
-                <p className="activity-text">Chưa có hoạt động nào</p>
-                <span className="activity-time">Hãy bắt đầu chẩn đoán đầu tiên của bạn!</span>
-              </div>
-            </div>
-          </div>
-        </section>
+    {/* HEADER */}
+    <header className="dashboard-header modern">
+      <div>
+        <h1>Xin chào, {user.full_name || user.username} 👋</h1>
+        <p>Hệ thống hỗ trợ chẩn đoán nguy cơ bệnh tiểu đường</p>
       </div>
-    </div>
-  );
-};
+      <button className="logout-btn" onClick={handleLogout}>Đăng xuất</button>
+    </header>
 
+    {/* NAV */}
+    <nav className="dashboard-nav modern">
+      <button onClick={() => navigate('/diagnosis')}>📋 Chẩn đoán</button>
+      <button onClick={() => navigate('/history')}>📊 Lịch sử</button>
+      <button onClick={() => navigate('/info')}>📚 Y tế</button>
+      <button onClick={() => navigate('/settings')}>⚙️ Cài đặt</button>
+    </nav>
+
+    {/* MAIN */}
+    <main className="dashboard-main modern">
+
+      <section className="dashboard-section">
+
+        {/* HERO CARD */}
+        <article className="card hero-card" onClick={() => navigate('/diagnosis')}>
+          <div className="hero-icon">🩺</div>
+          <h2>Chẩn đoán mới</h2>
+          <p>Thực hiện chẩn đoán nguy cơ tiểu đường ngay bây giờ</p>
+          <span className="hero-cta">Bắt đầu →</span>
+        </article>
+
+        {/* STATS */}
+        <article className="card stats-card">
+          <h3>Thống kê nhanh</h3>
+          <div className="stats-grid">
+            <div className="stat green">0<br /><span>Bình thường</span></div>
+            <div className="stat blue">0<br /><span>Cần theo dõi</span></div>
+            <div className="stat red">0<br /><span>Nguy cơ cao</span></div>
+          </div>
+        </article>
+
+        {/* INFO */}
+        <article className="card info-card">
+          <h3>Thông tin cá nhân</h3>
+          <p><b>Tài khoản:</b> {user.username}</p>
+          <p><b>Email:</b> {user.email}</p>
+          <p><b>Vai trò:</b> {user.role}</p>
+        </article>
+
+      </section>
+
+      {/* ASIDE */}
+      <aside className="dashboard-aside modern">
+        <h3>Hoạt động gần đây</h3>
+        <p>📝 Chưa có hoạt động</p>
+        <small>Hãy bắt đầu lần chẩn đoán đầu tiên</small>
+      </aside>
+
+    </main>
+
+    <footer className="dashboard-footer">
+      © 2025 – Diabetes Diagnosis System
+    </footer>
+
+  </div>
+);
+};
 export default Dashboard;

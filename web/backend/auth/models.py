@@ -1,4 +1,8 @@
+"""
+User Model - Updated with Prediction History Relationship
+"""
 from sqlalchemy import Column, Integer, String, Boolean, DateTime, Enum
+from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
 from database.base import Base
 import enum
@@ -20,3 +24,9 @@ class User(Base):
     role = Column(Enum(UserRole), default=UserRole.user, nullable=False)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
+    predictions = relationship(
+        "PredictionHistory", 
+        back_populates="user", 
+        cascade="all, delete-orphan",
+        lazy="dynamic"  # Query only when needed
+    )

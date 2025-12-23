@@ -10,7 +10,6 @@ __pycache__/
 venv/
 web/backend/venv/
 
-
 ../.venv/
 test/lab01
 test/lab02

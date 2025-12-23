@@ -4,6 +4,7 @@ import Login from "../pages/Login";
 import Register from "../pages/Register";
 import Dashboard from "../pages/Dashboard";
 import AdminDashboard from "../pages/AdminDashboard";
+import PredictionHistory from '../pages/PredictionHistory';
 
 // Component bảo vệ route
 const PrivateRoute = ({ children, adminOnly = false }) => {
@@ -29,6 +30,7 @@ export default function AppRouter() {
         <Route path="/" element={<Home />} />
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
+        <Route path="/history" element={<PredictionHistory />} />  
         
         {/* Protected routes */}
         <Route 
