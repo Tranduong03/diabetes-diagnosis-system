@@ -16,20 +16,6 @@ const MEAN_VALUES = {
 
 const NUMERIC_FIELDS = Object.keys(MEAN_VALUES);
 
-// Mean values từ dataset
-const MEAN_VALUES = {
-  Pregnancies: 4,
-  Glucose: 121.7,
-  BloodPressure: 72,
-  SkinThickness: 29,
-  Insulin: 141,
-  BMI: 32.5,
-  DiabetesPedigreeFunction: 0.472,
-  Age: 33
-};
-
-const NUMERIC_FIELDS = Object.keys(MEAN_VALUES);
-
 export default function Home() {
   const navigate = useNavigate();
   const warningRef = useRef(null);
