@@ -1,0 +1,2 @@
+# Ignore trained ML models
+models/*.pkl
