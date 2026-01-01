@@ -42,6 +42,7 @@ export default function Home() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [showWarning, setShowWarning] = useState(false);
   const [missingFields, setMissingFields] = useState([]);
+
   useEffect(() => {
     const token = localStorage.getItem('token');
     setIsLoggedIn(!!token);
@@ -171,9 +172,6 @@ export default function Home() {
       let nlpResult = null;
       if (dataToPredict.Symptoms && dataToPredict.Symptoms.trim()) {
         try {
-          const symptomsText = dataToPredict.Symptoms.trim();
-          const requestBody = { symptoms: symptomsText };
-          
           const nlpResponse = await fetch('http://localhost:8000/api/v1/ai/predict/symptoms', {
             method: 'POST',
             headers: {
@@ -187,7 +185,7 @@ export default function Home() {
             nlpResult = await nlpResponse.json();
           }
         } catch (nlpError) {
-          console.error('❌ NLP Error:', nlpError);
+          console.error('NLP Error:', nlpError);
         }
       }
       
