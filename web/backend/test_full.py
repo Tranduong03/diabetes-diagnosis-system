@@ -8,13 +8,13 @@ from ai.predict_nlp import get_nlp_predictor
 def test_ml_models():
     """Test ML models"""
     print("\n" + "="*70)
-    print("🧪 TESTING ML MODELS")
+    print("   TESTING MACHINE LEARNING MODELS")
     print("="*70 + "\n")
     
     try:
         predictor = get_predictor()
         
-        print(f"✅ Models loaded: {len(predictor.models)}")
+        print(f"   Models loaded: {len(predictor.models)}")
         print(f"   Available: {list(predictor.models.keys())}")
         # Hiển thị model nào có scaler
         scaler_info = {m: ('✅' if m in predictor.scalers else '❌') for m in predictor.models}

@@ -215,6 +215,7 @@ class DiabetesMLPredictor:
                 pred = int(model.predict(features)[0])
                 predictions.append(pred)
                 
+                # Get confidence
                 try:
                     conf = float(model.predict_proba(features)[0][1])
                 except:

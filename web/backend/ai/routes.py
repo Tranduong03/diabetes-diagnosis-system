@@ -15,6 +15,8 @@ from core.security import get_current_active_user
 from database.base import get_db
 from database.models import PredictionType, PredictionHistory
 from database import crud
+from fastapi import status
+
 
 router = APIRouter(prefix="/ai", tags=["AI Prediction"])
 
@@ -240,7 +242,15 @@ async def predict_from_symptoms(
         if not symptoms_text:
             raise HTTPException(status_code=400, detail="Vui lòng nhập mô tả triệu chứng")
         
-        nlp_predictor = get_nlp_predictor()
+        try:
+            nlp_predictor = get_nlp_predictor()
+        except Exception as e:
+            print(f"❌ NLP not available: {e}")
+            raise HTTPException(
+                status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+                detail="NLP model not available. Please install sentence-transformers."
+            )
+            
         result = nlp_predictor.predict_from_symptoms(symptoms_text)
         
         if not result['success']:

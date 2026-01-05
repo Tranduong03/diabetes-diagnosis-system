@@ -10,8 +10,10 @@ __pycache__/
 venv/
 web/backend/venv/
 
-
-.venv/
+../.venv/
 test/lab01
 test/lab02
 test/ML
+
+*.pth
+

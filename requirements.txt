@@ -10,3 +10,5 @@ jupyter
 xgboost
 imbalanced-learn
 joblib
+pytest 
+httpx

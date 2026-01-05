@@ -1,30 +1,3 @@
-# ==============================================================================
-# FILE: 02_model_architecture.py
-# CHỨC NĂNG:
-# 1. Định nghĩa Class Dataset: Để nạp dữ liệu vào mô hình.
-# 2. Định nghĩa Class Model: Kiến trúc mạng nơ-ron lai (Hybrid ViBERT + Từ điển).
-# ==============================================================================
-
-'''
-# FILE: 02_model_architecture.py
-
-## 🎯 Chức năng
-File này chứa "bản thiết kế" (Class) cho hệ thống, không thực thi code mà được các file khác `import` vào.
-
-## 🏗 Các thành phần chính
-### 1. Class `DiabetesDataset`
-* **Nhiệm vụ:** Đóng gói dữ liệu text, nhãn (label) và tính toán luôn điểm số từ điển cho từng câu.
-* **Input:** Văn bản thô.
-* **Output:** Các Tensor (dạng số) sẵn sàng để đưa vào PyTorch.
-
-### 2. Class `DiabetesHybridModel`
-* **Nhiệm vụ:** Định nghĩa kiến trúc mạng nơ-ron.
-* **Cơ chế lai (Hybrid):**
-    * Nhánh 1: Dùng **ViBERT** để hiểu ngữ cảnh câu văn.
-    * Nhánh 2: Dùng **Feature Từ điển** để bắt từ khóa trọng điểm.
-    * Hai nhánh này được nối lại (Concatenate) trước khi đưa ra quyết định cuối cùng.
-'''
-
 import torch
 from torch import nn
 from torch.utils.data import Dataset
