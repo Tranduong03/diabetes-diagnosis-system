@@ -83,11 +83,17 @@ export default function Home() {
     DiffWalk: 0,
     Age: 9,
     Symptoms: "",
-    weight: 70,    // kg
-    height: 170    // cm
+    weight: 70,
+    height: 170
   });
 
   const [calculatedBMI, setCalculatedBMI] = useState(24.2);
+  const [showHeightWeightWarning, setShowHeightWeightWarning] = useState(false);
+  const [heightWeightWarningData, setHeightWeightWarningData] = useState({
+    field: '',
+    value: null,
+    fieldKey: ''
+  });
 
   const [results, setResults] = useState({
     ml: "Chưa có kết quả — nhấn 'Chẩn đoán' để bắt đầu.",
@@ -114,12 +120,53 @@ export default function Home() {
     setIsLoggedIn(!!token);
   }, []);
 
+  // Kiểm tra chiều cao và cân nặng khi người dùng blur khỏi trường nhập
+  const checkHeightWeight = (name, value) => {
+    const numValue = parseFloat(value);
+    
+    if ((name === 'height' && (isNaN(numValue) || numValue === 0 || value === '')) ||
+        (name === 'weight' && (isNaN(numValue) || numValue === 0 || value === ''))) {
+      
+      const fieldName = name === 'height' ? 'Chiều cao' : 'Cân nặng';
+      const defaultValue = name === 'height' ? 170 : 70;
+      const fieldKey = name;
+      
+      setHeightWeightWarningData({
+        field: fieldName,
+        value: defaultValue,
+        fieldKey: fieldKey
+      });
+      setShowHeightWeightWarning(true);
+      return false;
+    }
+    
+    return true;
+  };
+
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setFormData({
-      ...formData,
-      [name]: name === 'Symptoms' ? value : parseFloat(value) || 0
-    });
+    
+    // Xử lý đặc biệt cho chiều cao và cân nặng
+    if (name === 'height' || name === 'weight') {
+      const newValue = value === '' ? '' : value;
+      setFormData({
+        ...formData,
+        [name]: newValue
+      });
+    } else {
+      setFormData({
+        ...formData,
+        [name]: name === 'Symptoms' ? value : parseFloat(value) || 0
+      });
+    }
+  };
+
+  const handleBlur = (e) => {
+    const { name, value } = e.target;
+    
+    if (name === 'height' || name === 'weight') {
+      checkHeightWeight(name, value);
+    }
   };
 
   const handleClear = () => {
@@ -143,6 +190,33 @@ export default function Home() {
       nlp: "Chưa có kết quả — nhấn 'Chẩn đoán' để bắt đầu.",
       final: "Chưa có kết luận."
     });
+    setShowHeightWeightWarning(false);
+  };
+
+  // Hàm xử lý khi người dùng chọn dùng giá trị mặc định
+  const handleUseDefaultValue = () => {
+    const { fieldKey, value } = heightWeightWarningData;
+    
+    setFormData(prev => ({
+      ...prev,
+      [fieldKey]: value
+    }));
+    
+    setShowHeightWeightWarning(false);
+  };
+
+  // Hàm xử lý khi người dùng chọn nhập lại
+  const handleInputAgain = () => {
+    setShowHeightWeightWarning(false);
+    // Focus vào trường nhập liệu tương ứng sau khi modal đóng
+    setTimeout(() => {
+      const inputId = heightWeightWarningData.fieldKey === 'height' ? 'height-input' : 'weight-input';
+      const inputElement = document.getElementById(inputId);
+      if (inputElement) {
+        inputElement.focus();
+        inputElement.select();
+      }
+    }, 100);
   };
 
   const handlePredict = async () => {
@@ -150,6 +224,16 @@ export default function Home() {
     if (!token) {
       alert('⚠️ Vui lòng đăng nhập để sử dụng chức năng chẩn đoán!');
       navigate('/login');
+      return;
+    }
+
+    // Kiểm tra chiều cao
+    if (!checkHeightWeight('height', formData.height)) {
+      return;
+    }
+
+    // Kiểm tra cân nặng
+    if (!checkHeightWeight('weight', formData.weight)) {
       return;
     }
 
@@ -162,6 +246,8 @@ export default function Home() {
 
     const dataToPredict = {
       ...formData,
+      weight: parseFloat(formData.weight),
+      height: parseFloat(formData.height),
       BMI: parseFloat(bmi.toFixed(1))
     };
 
@@ -216,16 +302,50 @@ export default function Home() {
         }
       }
 
-      const mlModels = result.individual_predictions.filter(p => p.model !== 'PhoBERT');
-      const mlResults = mlModels.map(m =>
-        `${m.model}: ${m.result} (${(m.confidence * 100).toFixed(0)}%)`
-      ).join('\n');
+// Hàm xác định icon cho ML
+const getMLIcon = (prediction, confidence) => {
+  if (prediction === 0) return "🟢";
+  if (prediction === 1 && confidence >= 0.75) return "🔴";
+  if (prediction === 1 && confidence < 0.75) return "🟡";
+  return "⚪"; // fallback
+};
 
-      let nlpText = "Không có mô tả triệu chứng";
-      const nlpModel = result.individual_predictions.find(p => p.model === 'PhoBERT');
-      if (nlpModel) {
-        nlpText = `PhoBERT Analysis:\n• Kết luận: ${nlpModel.result}\n• Độ tin cậy: ${(nlpModel.confidence * 100).toFixed(1)}%`;
-      }
+// Hàm xác định icon cho NLP
+const getNLPIcon = (outcome, stage) => {
+  if (outcome === 0) return "🟢"; // Không bệnh
+  // outcome === 1 => có bệnh
+  switch(stage) {
+    case 1:
+      return "🟠"; // stage nhẹ → vàng cam
+    case 2:
+    case 3:
+      return "🔴"; // stage nặng → đỏ
+    default:
+      return "🟡"; // stage không xác định → vàng
+  }
+};
+
+
+const mlModels = result.individual_predictions.filter(p => p.model !== 'PhoBERT');
+    
+    // Chỉ hiển thị kết quả và độ tin cậy, không hiển thị tên model
+    let mlResults = "Không có dữ liệu từ thông tin y tế";
+    
+    if (mlModels.length > 0) {
+      const ml = mlModels[0];
+      const mlText = ml.result === "Không có tiểu đường" ? "Không có tiểu đường" : "Có nguy cơ tiểu đường";
+      const mlIcon = getMLIcon(ml.prediction, ml.confidence);
+      mlResults = `${mlText} ${mlIcon}\nĐộ tin cậy: ${(ml.confidence * 100).toFixed(1)}%`;
+    }
+
+    let nlpText = "Không có mô tả triệu chứng";
+    
+    const nlpModel = result.individual_predictions.find(p => p.model === 'PhoBERT');
+    const nlpIcon = getNLPIcon(nlpModel.outcome, nlpModel.stage);
+    
+    if (nlpModel) {
+      nlpText = `Kết luận: ${nlpModel.result} ${nlpIcon}\nĐộ tin cậy: ${(nlpModel.confidence * 100).toFixed(1)}%`;
+    }
 
       const riskLevel = result.risk_level;
       const ensembleConf = result.ensemble_confidence;
@@ -239,28 +359,22 @@ export default function Home() {
         1: 'CÓ NGUY CƠ TIỂU ĐƯỜNG',
       };
 
-      let finalConclusion = `
-KẾT QUẢ TỔNG HỢP
+      let finalConclusion = `KẾT QUẢ TỔNG HỢP
 
 Chẩn đoán: ${diagnosisMap[ensemblePred] || 'Không xác định'}
 Độ tin cậy: ${(ensembleConf * 100).toFixed(1)}%
 Mức độ nguy cơ: ${riskLevelText}
-
 `;
 
-      if (ensemblePred === 1 || riskLevel === 'high') {
-        finalConclusion += `🔴 CẢNH BÁO: Nguy cơ cao!\n\n🏥 Khuyến nghị:\n• Đi khám bác sĩ NGAY để được tư vấn\n• Xét nghiệm glucose máu đầy đủ\n• Chuẩn bị hồ sơ y tế`;
-      } else if (ensemblePred === 1 || riskLevel === 'medium') {
-        finalConclusion += `🟡 Tiền tiểu đường / Nguy cơ trung bình\n\n👀 Khuyến nghị:\n• Theo dõi đường huyết định kỳ\n• Thay đổi lối sống: ăn uống, vận động\n• Kiểm tra 3-6 tháng/lần\n• Giảm cân nếu thừa cân`;
-      } else {
-        finalConclusion += `🟢 Kết quả tốt!\n\n✅ Khuyến nghị:\n• Tiếp tục duy trì lối sống lành mạnh\n• Chế độ ăn cân bằng, ít đường\n• Vận động 30 phút/ngày\n• Kiểm tra định kỳ hàng năm`;
-      }
+        const recommendationsText = result.recommendations
+          ?.map(r => `• ${r}`)
+          .join('\n') || 'Không có khuyến nghị';
 
-      setResults({
-        ml: mlResults || "Không có dữ liệu từ ML models",
-        nlp: nlpText,
-        final: finalConclusion.trim()
-      });
+        setResults({
+          ml: mlResults,
+          nlp: nlpText,
+          final: `${finalConclusion}\n🏥 KHUYẾN NGHỊ:\n${recommendationsText}`
+        });
 
     } catch (error) {
       console.error('Prediction error:', error);
@@ -283,6 +397,38 @@ Mức độ nguy cơ: ${riskLevelText}
 
   return (
     <div className="page-container">
+      {/* Modal cảnh báo */}
+      {showHeightWeightWarning && (
+        <div className="modal-overlay">
+          <div className="modal-content">
+            <div className="modal-header">
+              <h3>Cảnh báo nhập liệu</h3>
+            </div>
+            <div className="modal-body">
+              <p>
+                <strong>{heightWeightWarningData.field}</strong> đang có giá trị không hợp lệ (0 hoặc trống).
+                Bạn có muốn sử dụng giá trị mặc định ({heightWeightWarningData.value} 
+                {heightWeightWarningData.field === 'Chiều cao' ? 'cm' : 'kg'}) không?
+              </p>
+              <div className="modal-actions">
+                <button 
+                  onClick={handleUseDefaultValue}
+                  className="modal-btn modal-btn-primary"
+                >
+                  Dùng giá trị mặc định
+                </button>
+                <button 
+                  onClick={handleInputAgain}
+                  className="modal-btn modal-btn-secondary"
+                >
+                  Nhập lại
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       <div className="nav-header">
         <div className="nav-buttons">
           {isLoggedIn ? (
@@ -371,36 +517,50 @@ Mức độ nguy cơ: ${riskLevelText}
                   <label className="field-label-compact">
                     Cân nặng & Chiều cao
                     <span className="field-hint">Hệ thống sẽ tự động tính chỉ số BMI</span>
+                    {(formData.height === '' || formData.height === 0 || formData.height === null) && (
+                      <span className="warning-text">⚠️ Chiều cao không hợp lệ</span>
+                    )}
+                    {(formData.weight === '' || formData.weight === 0 || formData.weight === null) && (
+                      <span className="warning-text">⚠️ Cân nặng không hợp lệ</span>
+                    )}
                   </label>
                   <div className="bmi-input-group">
                     <div className="bmi-input-wrapper">
                       <input
+                        id="weight-input"
                         type="number"
                         name="weight"
                         value={formData.weight}
                         onChange={handleChange}
+                        onBlur={handleBlur}
                         min="30"
                         max="200"
                         step="0.1"
                         placeholder="Cân nặng"
                         disabled={loading}
-                        className="number-input-compact"
+                        className={`number-input-compact ${
+                          (formData.weight === '' || formData.weight === 0 || formData.weight === null) ? 'input-warning' : ''
+                        }`}
                       />
                       <span className="unit">kg</span>
                     </div>
 
                     <div className="bmi-input-wrapper">
                       <input
+                        id="height-input"
                         type="number"
                         name="height"
                         value={formData.height}
                         onChange={handleChange}
+                        onBlur={handleBlur}
                         min="100"
                         max="250"
                         step="1"
                         placeholder="Chiều cao"
                         disabled={loading}
-                        className="number-input-compact"
+                        className={`number-input-compact ${
+                          (formData.height === '' || formData.height === 0 || formData.height === null) ? 'input-warning' : ''
+                        }`}
                       />
                       <span className="unit">cm</span>
                     </div>
@@ -418,7 +578,6 @@ Mức độ nguy cơ: ${riskLevelText}
                     </div>
                   )}
                 </div>
-
 
                 <div className="field-compact">
                   <label className="field-label-compact">
@@ -471,7 +630,7 @@ Mức độ nguy cơ: ${riskLevelText}
 
             {/* Triệu chứng */}
             <div className="section-group">
-              <h3 className="section-title">Triệu chứng (tùy chọn)</h3>
+              <h3 className="section-title">Mô tả tình trạng sức khỏe (tùy chọn)</h3>
               <textarea
                 name="Symptoms"
                 value={formData.Symptoms}
@@ -512,16 +671,14 @@ Mức độ nguy cơ: ${riskLevelText}
         <aside className="panel">
           <div className="result-card">
             <div className="result-row">
-              <div>Machine Learning</div>
-              <div className="chip ml">ML</div>
+              <div>Dự đoán từ thông tin y tế & chỉ số sức khỏe</div>
             </div>
             <div className="placeholder">{results.ml}</div>
           </div>
 
           <div className="result-card">
             <div className="result-row">
-              <div>PhoBERT NLP</div>
-              <div className="chip nlp">NLP</div>
+              <div>Dự đoán từ mô tả tình trạng sức khỏe</div>
             </div>
             <div className="placeholder">{results.nlp}</div>
           </div>
@@ -529,7 +686,6 @@ Mức độ nguy cơ: ${riskLevelText}
           <div className="result-card">
             <div className="result-row">
               <div>Kết luận</div>
-              <div className="chip final">Ensemble</div>
             </div>
             <div className="placeholder">{results.final}</div>
           </div>

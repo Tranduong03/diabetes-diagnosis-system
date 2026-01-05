@@ -2,6 +2,76 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import './PredictionHistory.css';
 
+const FIELD_LABELS = {
+  HighBP: "Huyết áp cao",
+  HighChol: "Cholesterol cao",
+  Smoker: "Hút thuốc",
+  HeartDiseaseorAttack: "Bệnh tim/Đau tim",
+  PhysActivity: "Hoạt động thể chất",
+  GenHlth: "Sức khỏe tổng quát",
+  MentHlth: "Sức khỏe tinh thần",
+  PhysHlth: "Sức khỏe thể chất",
+  DiffWalk: "Khó khăn đi bộ",
+  Age: "Nhóm tuổi"
+};
+
+const FIELD_DESCRIPTIONS = {
+  HighBP: "Bạn có bị huyết áp cao?",
+  HighChol: "Cholesterol cao?",
+  Smoker: "Bạn có hút thuốc không?",
+  HeartDiseaseorAttack: "Tiền sử bệnh tim?",
+  PhysActivity: "Bạn có hoạt động thể chất trong 30 ngày không?",
+  GenHlth: "Rất tốt → Kém",
+  MentHlth: "Trong 30 ngày qua, sức khỏe tinh thần của bạn không tốt ở mức độ nào?",
+  PhysHlth: "Trong 30 ngày qua, sức khỏe thể chất của bạn không tốt ở mức độ nào?",
+  DiffWalk: "Gần đây bạn đi bộ hoặc leo cầu thang có nhanh mệt không?",
+  Age: "Chọn độ tuổi của bạn"
+};
+
+const AGE_GROUPS = [
+  { value: 1, label: "18-24 tuổi" },
+  { value: 2, label: "25-29 tuổi" },
+  { value: 3, label: "30-34 tuổi" },
+  { value: 4, label: "35-39 tuổi" },
+  { value: 5, label: "40-44 tuổi" },
+  { value: 6, label: "45-49 tuổi" },
+  { value: 7, label: "50-54 tuổi" },
+  { value: 8, label: "55-59 tuổi" },
+  { value: 9, label: "60-64 tuổi" },
+  { value: 10, label: "65-69 tuổi" },
+  { value: 11, label: "70-74 tuổi" },
+  { value: 12, label: "75-79 tuổi" },
+  { value: 13, label: "80+ tuổi" }
+];
+
+const HEALTH_OPTIONS = [
+  { value: 1, label: "Rất tốt" },
+  { value: 2, label: "Tốt" },
+  { value: 3, label: "Bình thường" },
+  { value: 4, label: "Kém" },
+  { value: 5, label: "Rất kém" }
+];
+
+const MEN_HLTH_OPTIONS = [
+  { value: 0, label: "Không bao giờ" },
+  { value: 3, label: "Hiếm khi" },
+  { value: 9, label: "Thỉnh thoảng" },
+  { value: 16, label: "Thường xuyên" },
+  { value: 30, label: "Liên tục" }
+];
+
+const PHYS_HLTH_OPTIONS = [
+  { value: 0, label: "Không bao giờ" },
+  { value: 3, label: "Hiếm khi" },
+  { value: 9, label: "Thỉnh thoảng" },
+  { value: 16, label: "Thường xuyên" },
+  { value: 30, label: "Liên tục" }
+];
+
+const booleanFields = ['HighBP','HighChol','Smoker','HeartDiseaseorAttack','PhysActivity','DiffWalk'];
+
+
+
 const PredictionHistory = () => {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
@@ -211,9 +281,9 @@ const PredictionHistory = () => {
           }}
         >
           <option value="">Tất cả loại</option>
-          <option value="ml_only">Chỉ ML</option>
-          <option value="nlp_only">Chỉ NLP</option>
-          <option value="ensemble">Ensemble</option>
+          <option value="ml_only">Chẩn đoán từ chỉ số sức khỏe</option>
+          <option value="nlp_only">Chẩn đoán từ các triệu chứng</option>
+          <option value="ensemble">Kết hợp 2 loại chẩn đoán</option>
         </select>
 
         <select
@@ -266,9 +336,9 @@ const PredictionHistory = () => {
                 <div key={item.id} className="history-item">
                   <div className="item-header">
                     <div>
-                      <span className={`badge ${typeBadge.class}`}>
+                      {/* <span className={`badge ${typeBadge.class}`}>
                         {typeBadge.text}
-                      </span>
+                      </span> */}
                       <span className={`badge ${riskBadge.class}`}>
                         {riskBadge.text}
                       </span>
@@ -367,46 +437,52 @@ const PredictionHistory = () => {
               <section className="detail-section">
                 <h3>📝 Dữ liệu đầu vào</h3>
                 <div className="detail-grid">
-                  {selectedPrediction.input_data.pregnancies !== null && (
-                    <div>
-                      <strong>Số lần mang thai:</strong>{' '}
-                      {selectedPrediction.input_data.pregnancies}
-                    </div>
-                  )}
-                  {selectedPrediction.input_data.glucose && (
-                    <div>
-                      <strong>Glucose:</strong> {selectedPrediction.input_data.glucose}
-                    </div>
-                  )}
-                  {selectedPrediction.input_data.blood_pressure && (
-                    <div>
-                      <strong>Huyết áp:</strong>{' '}
-                      {selectedPrediction.input_data.blood_pressure}
-                    </div>
-                  )}
-                  {selectedPrediction.input_data.bmi && (
-                    <div>
-                      <strong>BMI:</strong> {selectedPrediction.input_data.bmi}
-                    </div>
-                  )}
-                  {selectedPrediction.input_data.age && (
-                    <div>
-                      <strong>Tuổi:</strong> {selectedPrediction.input_data.age}
-                    </div>
-                  )}
+                  {Object.entries(selectedPrediction.input_data).map(([key, value]) => {
+                    if (value === null || value === undefined) return null;
+
+                    let displayValue = value;
+                    if (booleanFields.includes(key)) {
+                      displayValue = value === 1 ? 'Có' : 'Không';
+                    }
+
+                    // Nếu là tuổi, hiển thị theo nhóm tuổi
+                    if (key === 'Age') {
+                      const ageGroup = AGE_GROUPS.find((g) => g.value === value);
+                      displayValue = ageGroup ? ageGroup.label : value;
+                    }
+
+                    // Nếu là sức khỏe tổng quát
+                    if (key === 'GenHlth') {
+                      const option = HEALTH_OPTIONS.find((o) => o.value === value);
+                      displayValue = option ? option.label : value;
+                    }
+
+                    // Nếu là sức khỏe tinh thần
+                    if (key === 'MentHlth') {
+                      const option = MEN_HLTH_OPTIONS.find((o) => o.value === value);
+                      displayValue = option ? option.label : value;
+                    }
+
+                    // Nếu là sức khỏe thể chất
+                    if (key === 'PhysHlth') {
+                      const option = PHYS_HLTH_OPTIONS.find((o) => o.value === value);
+                      displayValue = option ? option.label : value;
+                    }
+
+                    return (
+                      <div key={key} className="input-item">
+                        <strong>{FIELD_LABELS[key] || key}:</strong>{' '}
+                        <span title={FIELD_DESCRIPTIONS[key] || ''}>{displayValue}</span>
+                      </div>
+                    );
+                  })}
                 </div>
-                {selectedPrediction.input_data.symptoms_text && (
-                  <div className="symptoms-text">
-                    <strong>Triệu chứng:</strong>
-                    <p>{selectedPrediction.input_data.symptoms_text}</p>
-                  </div>
-                )}
               </section>
 
               {/* ML Results */}
               {selectedPrediction.ml_results && (
                 <section className="detail-section">
-                  <h3>🤖 Kết quả Machine Learning</h3>
+                  <h3>Dự đoán từ chỉ số sức khỏe</h3>
                   <p>
                     <strong>Dự đoán:</strong>{' '}
                     {selectedPrediction.ml_results.prediction === 1
@@ -417,25 +493,13 @@ const PredictionHistory = () => {
                     <strong>Độ tin cậy:</strong>{' '}
                     {(selectedPrediction.ml_results.confidence * 100).toFixed(1)}%
                   </p>
-                  {selectedPrediction.ml_results.individual_results && (
-                    <div className="models-list">
-                      <strong>Chi tiết từng model:</strong>
-                      {selectedPrediction.ml_results.individual_results.map((model, idx) => (
-                        <div key={idx} className="model-result">
-                          <span>{model.model}:</span>
-                          <span>{model.result}</span>
-                          <span>({(model.confidence * 100).toFixed(0)}%)</span>
-                        </div>
-                      ))}
-                    </div>
-                  )}
                 </section>
               )}
 
               {/* NLP Results */}
               {selectedPrediction.nlp_results && (
                 <section className="detail-section">
-                  <h3>💬 Kết quả NLP (PhoBERT)</h3>
+                  <h3>Dự đoán từ các triệu chứng</h3>
                   <p>
                     <strong>Dự đoán:</strong>{' '}
                     {selectedPrediction.nlp_results.prediction === 1
@@ -481,10 +545,6 @@ const PredictionHistory = () => {
                   <p>
                     <strong>Độ tin cậy:</strong>{' '}
                     {(selectedPrediction.ensemble_results.confidence * 100).toFixed(1)}%
-                  </p>
-                  <p>
-                    <strong>Phương pháp:</strong>{' '}
-                    {selectedPrediction.ensemble_results.method}
                   </p>
                 </div>
               </section>

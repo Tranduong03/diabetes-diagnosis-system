@@ -1,17 +1,22 @@
 """
-AI Prediction Routes - Updated for new dataset (11 features + Symptoms NLP)
+AI Prediction Routes 
 """
 
-from fastapi import APIRouter, HTTPException, Depends, Request
+from fastapi import APIRouter, HTTPException, Depends, Request, Query
 from pydantic import BaseModel, Field
 from typing import Optional, List, Dict
 from sqlalchemy.orm import Session
+from sqlalchemy import desc
 import json
+from datetime import datetime, timedelta
 
 from ai.predict_ml import get_predictor
 from ai.predict_nlp import get_nlp_predictor
+from ai.ensemble_strategies import get_ensemble_prediction
 from core.security import get_current_active_user
 from database.base import get_db
+from database.models.prediction import PredictionHistory
+from auth.models import User
 from fastapi import status
 
 
@@ -21,7 +26,6 @@ router = APIRouter(prefix="/ai", tags=["AI Prediction"])
 
 class DiabetesEnsembleInput(BaseModel):
     """Input data cho Ensemble prediction (ML + NLP)"""
-    # ML fields (11 features)
     HighBP: int = Field(0, ge=0, le=1, description="Huyết áp cao: 0=Không, 1=Có")
     HighChol: int = Field(0, ge=0, le=1, description="Cholesterol cao: 0=Không, 1=Có")
     Smoker: int = Field(0, ge=0, le=1, description="Hút thuốc: 0=Không, 1=Có")
@@ -33,27 +37,7 @@ class DiabetesEnsembleInput(BaseModel):
     DiffWalk: int = Field(0, ge=0, le=1, description="Khó đi bộ: 0=Không, 1=Có")
     Age: int = Field(9, ge=1, le=13, description="Nhóm tuổi: 1=18-24, 13=80+")
     BMI: float = Field(28, ge=10, le=70, description="Chỉ số BMI")
-    
-    # NLP field (optional)
     Symptoms: Optional[str] = Field(None, description="Mô tả triệu chứng (tùy chọn)")
-
-class DiabetesInput(BaseModel):
-    """Input data cho ML prediction only"""
-    HighBP: int = Field(0, ge=0, le=1)
-    HighChol: int = Field(0, ge=0, le=1)
-    Smoker: int = Field(0, ge=0, le=1)
-    HeartDiseaseorAttack: int = Field(0, ge=0, le=1)
-    PhysActivity: int = Field(1, ge=0, le=1)
-    GenHlth: int = Field(3, ge=1, le=5)
-    MentHlth: int = Field(0, ge=0, le=30)
-    PhysHlth: int = Field(0, ge=0, le=30)
-    DiffWalk: int = Field(0, ge=0, le=1)
-    Age: int = Field(9, ge=1, le=13)
-    BMI: float = Field(28, ge=10, le=70)
-
-class SymptomsInput(BaseModel):
-    """Input cho NLP prediction"""
-    symptoms: str = Field(..., min_length=1, description="Mô tả triệu chứng")
 
 class PredictionResponse(BaseModel):
     """Response cho prediction"""
@@ -66,6 +50,108 @@ class PredictionResponse(BaseModel):
     individual_predictions: List[Dict]
     recommendations: List[str]
     probabilities: Optional[Dict] = None
+    ensemble_details: Optional[Dict] = None
+    prediction_id: Optional[int] = None  # ID của record vừa lưu
+
+# ============ HELPER FUNCTIONS ============
+
+def save_prediction_to_db(
+    db: Session,
+    user_id: int,
+    prediction_type: str,
+    ensemble_pred: int,
+    ensemble_conf: float,
+    risk_level: str,
+    input_data: Dict,
+    ml_results: Optional[Dict],
+    nlp_results: Optional[Dict],
+    ensemble_details: Dict,
+    recommendations: List[str]
+) -> int:
+    """Lưu kết quả dự đoán vào database"""
+    try:
+        prediction = PredictionHistory(
+            user_id=user_id,
+            prediction_type=prediction_type,
+            ensemble_prediction=ensemble_pred,
+            ensemble_confidence=ensemble_conf,
+            risk_level=risk_level,
+            input_data=input_data,
+            ml_results=ml_results,
+            nlp_results=nlp_results,
+            ensemble_results=ensemble_details,
+            recommendations=recommendations
+        )
+        db.add(prediction)
+        db.commit()
+        db.refresh(prediction)
+        return prediction.id
+    except Exception as e:
+        db.rollback()
+        print(f"❌ Error saving prediction: {e}")
+        raise
+
+def determine_risk_level(prediction, confidence):
+    if prediction == 1:
+        return "high" if confidence >= 0.75 else "medium"
+    return "low"
+
+def generate_recommendations(
+    input_data: Dict, 
+    prediction: int, 
+    confidence: float,
+    nlp_result: Optional[Dict]
+) -> List[str]:
+    """Tạo khuyến nghị dựa trên kết quả"""
+    recommendations = []
+    
+    if input_data.get('HighBP', 0) == 1:
+        recommendations.append("⚠️ Huyết áp cao - Cần theo dõi và điều chỉnh")
+    
+    if input_data.get('HighChol', 0) == 1:
+        recommendations.append("⚠️ Cholesterol cao - Nên kiểm tra lipid máu")
+    
+    if input_data.get('Smoker', 0) == 1:
+        recommendations.append("🚭 Nên cai thuốc lá để giảm nguy cơ biến chứng")
+    
+    if input_data.get('PhysActivity', 1) == 0:
+        recommendations.append("🏃 Tăng cường hoạt động thể chất (30 phút/ngày)")
+    
+    bmi = input_data.get('BMI', 28)
+    if bmi > 30:
+        recommendations.append("⚠️ BMI cao (béo phì) - Nên giảm cân")
+    elif bmi > 25:
+        recommendations.append("⚠️ BMI cao (thừa cân) - Kiểm soát cân nặng")
+    
+    if input_data.get('GenHlth', 3) >= 4:
+        recommendations.append("⚠️ Sức khỏe tổng quát kém - Cần tư vấn bác sĩ")
+    
+    if prediction == 1:
+        recommendations.extend([
+            "🚨 CẢNH BÁO: Nguy cơ cao mắc tiểu đường",
+            "🏥 Đi khám bác sĩ NGAY để xét nghiệm glucose máu",
+            "📊 Cần theo dõi đường huyết thường xuyên",
+            "💊 Có thể cần điều trị y tế"
+        ])
+    else:
+        if confidence < 0.7:
+            recommendations.append("✅ Kết quả tốt nhưng cần theo dõi định kỳ")
+        recommendations.extend([
+            "✅ Duy trì lối sống lành mạnh",
+            "🥗 Chế độ ăn cân bằng, nhiều rau xanh",
+            "🏃 Vận động thường xuyên",
+            "📅 Kiểm tra sức khỏe định kỳ hàng năm"
+        ])
+    
+    if nlp_result and nlp_result.get('success'):
+        stage = nlp_result.get('stage', 0)
+        if nlp_result['outcome'] == 1:
+            if stage >= 2:
+                recommendations.append("⚠️ Triệu chứng nghiêm trọng - Cần khám ngay")
+            else:
+                recommendations.append("⚠️ Triệu chứng cho thấy dấu hiệu cảnh báo")
+    
+    return recommendations
 
 # ============ PREDICTION ROUTES ============
 
@@ -73,14 +159,10 @@ class PredictionResponse(BaseModel):
 async def predict_ensemble_ml_nlp(
     data: DiabetesEnsembleInput,
     db: Session = Depends(get_db),
-    current_user = Depends(get_current_active_user)
+    current_user: User = Depends(get_current_active_user)
 ):
     """
-    🎯 Dự đoán tổng hợp (Ensemble ML + NLP)
-    
-    - ML: Phân tích 11 chỉ số y tế
-    - NLP: Phân tích triệu chứng (nếu có)
-    - Ensemble: Kết hợp cả 2 nếu có triệu chứng
+    🎯 Dự đoán tổng hợp (Ensemble ML + NLP) - LƯU VÀO DATABASE
     """
     try:
         predictor = get_predictor()
@@ -103,36 +185,50 @@ async def predict_ensemble_ml_nlp(
         
         # 3. Ensemble Logic
         if nlp_result and nlp_result.get('success'):
-            # Có cả ML và NLP
             ml_pred = ml_result['ensemble_prediction']
-            nlp_pred = nlp_result['outcome']
-            
-            # Voting: lấy max prediction
-            ensemble_pred = max(ml_pred, nlp_pred)
-            
-            # Confidence: trung bình có trọng số (ML 60%, NLP 40%)
             ml_conf = ml_result['ensemble_confidence']
+            nlp_pred = nlp_result['outcome']
             nlp_conf = nlp_result['confidence']
-            ensemble_conf = (ml_conf * 0.6) + (nlp_conf * 0.4)
+            nlp_stage = nlp_result.get('stage', 0)
             
-            ensemble_method = "ML + NLP Ensemble (60-40)"
+            ensemble_pred, ensemble_conf, ensemble_method, ensemble_details = get_ensemble_prediction(
+                ml_pred=ml_pred,
+                ml_conf=ml_conf,
+                nlp_pred=nlp_pred,
+                nlp_conf=nlp_conf,
+                nlp_stage=nlp_stage,
+                strategy="risk_aware"
+            )
             
-            # Individual predictions
             individual_preds = ml_result['individual_predictions'] + [{
                 'model': 'PhoBERT',
                 'result': nlp_result['answer'],
                 'confidence': nlp_result['confidence'],
-                'prediction': nlp_result['outcome']
+                'prediction': nlp_result['outcome'],
+                'stage': nlp_stage
             }]
             
             models_count = ml_result['models_count'] + 1
+            prediction_type = "ensemble"
+            
+            # Prepare NLP results for DB
+            nlp_results_db = {
+                'prediction': nlp_result['outcome'],
+                'confidence': nlp_result['confidence'],
+                'stage': nlp_stage,
+                'answer': nlp_result['answer'],
+                'method': nlp_result.get('method', 'PhoBERT')
+            }
+            
         else:
-            # Chỉ có ML
             ensemble_pred = ml_result['ensemble_prediction']
             ensemble_conf = ml_result['ensemble_confidence']
             ensemble_method = "ML only"
+            ensemble_details = {"ml_only": True}
             individual_preds = ml_result['individual_predictions']
             models_count = ml_result['models_count']
+            prediction_type = "ml_only"
+            nlp_results_db = None
         
         # 4. Determine risk level
         risk_level = determine_risk_level(ensemble_pred, ensemble_conf)
@@ -145,7 +241,39 @@ async def predict_ensemble_ml_nlp(
             nlp_result
         )
         
-        # 6. Map prediction to text
+        # 6. Prepare data for saving
+        input_data_db = data.model_dump()
+        
+        ml_results_db = {
+            'prediction': ml_result['ensemble_prediction'],
+            'confidence': ml_result['ensemble_confidence'],
+            'individual_results': ml_result['individual_predictions'],
+            'probabilities': ml_result.get('probabilities')
+        }
+        
+        ensemble_results_db = {
+            'prediction': ensemble_pred,
+            'confidence': ensemble_conf,
+            'method': ensemble_method,
+            'details': ensemble_details
+        }
+        
+        # 7. SAVE TO DATABASE
+        prediction_id = save_prediction_to_db(
+            db=db,
+            user_id=current_user.id,
+            prediction_type=prediction_type,
+            ensemble_pred=ensemble_pred,
+            ensemble_conf=ensemble_conf,
+            risk_level=risk_level,
+            input_data=input_data_db,
+            ml_results=ml_results_db,
+            nlp_results=nlp_results_db,
+            ensemble_details=ensemble_results_db,
+            recommendations=recommendations
+        )
+        
+        # 8. Map prediction to text
         diagnosis_map = {
             0: "Không có tiểu đường",
             1: "Có nguy cơ tiểu đường"
@@ -160,7 +288,9 @@ async def predict_ensemble_ml_nlp(
             "models_count": models_count,
             "individual_predictions": individual_preds,
             "recommendations": recommendations,
-            "probabilities": ml_result.get('probabilities')
+            "probabilities": ml_result.get('probabilities'),
+            "ensemble_details": ensemble_details,
+            "prediction_id": prediction_id
         }
         
     except Exception as e:
@@ -169,233 +299,158 @@ async def predict_ensemble_ml_nlp(
         traceback.print_exc()
         raise HTTPException(status_code=500, detail=str(e))
 
-@router.post("/predict", response_model=PredictionResponse)
-async def predict_diabetes(
-    data: DiabetesInput,
+# ============ HISTORY ROUTES ============
+
+@router.get("/predictions/history")
+async def get_prediction_history(
+    skip: int = Query(0, ge=0),
+    limit: int = Query(10, ge=1, le=100),
+    prediction_type: Optional[str] = Query(None),
+    risk_level: Optional[str] = Query(None),
+    days: Optional[int] = Query(None),
     db: Session = Depends(get_db),
-    current_user = Depends(get_current_active_user)
+    current_user: User = Depends(get_current_active_user)
 ):
     """
-    🔮 Dự đoán nguy cơ bệnh tiểu đường (ML only)
+    📋 Lấy lịch sử dự đoán của user hiện tại
+    
+    Filters:
+    - prediction_type: 'ml_only', 'nlp_only', 'ensemble'
+    - risk_level: 'low', 'medium', 'high'
+    - days: Số ngày gần đây (7, 30, 90)
     """
     try:
-        predictor = get_predictor()
-        input_data = data.model_dump()
-        
-        result = predictor.predict_ensemble(input_data)
-        risk_level = determine_risk_level(
-            result['ensemble_prediction'], 
-            result['ensemble_confidence']
+        query = db.query(PredictionHistory).filter(
+            PredictionHistory.user_id == current_user.id
         )
         
-        recommendations = generate_recommendations(
-            input_data,
-            result['ensemble_prediction'],
-            result['ensemble_confidence'],
-            None
-        )
+        # Apply filters
+        if prediction_type:
+            query = query.filter(PredictionHistory.prediction_type == prediction_type)
         
-        diagnosis_map = {
-            0: "Không có tiểu đường",
-            1: "Có nguy cơ tiểu đường",
-        }
+        if risk_level:
+            query = query.filter(PredictionHistory.risk_level == risk_level)
+        
+        if days:
+            date_from = datetime.utcnow() - timedelta(days=days)
+            query = query.filter(PredictionHistory.created_at >= date_from)
+        
+        # Count total
+        total_count = query.count()
+        
+        # Get paginated results
+        predictions = query.order_by(desc(PredictionHistory.created_at)).offset(skip).limit(limit).all()
         
         return {
             "success": True,
-            "ensemble_prediction": result['ensemble_prediction'],
-            "ensemble_confidence": result['ensemble_confidence'],
-            "risk_level": risk_level,
-            "result": diagnosis_map.get(result['ensemble_prediction'], "Không xác định"),
-            "models_count": result['models_count'],
-            "individual_predictions": result['individual_predictions'],
-            "recommendations": recommendations,
-            "probabilities": result.get('probabilities')
+            "total_count": total_count,
+            "history": [pred.to_summary() for pred in predictions]
         }
         
     except Exception as e:
         print(f"❌ Error: {e}")
-        import traceback
-        traceback.print_exc()
         raise HTTPException(status_code=500, detail=str(e))
 
-@router.post("/predict/symptoms")
-async def predict_from_symptoms(
-    request: Request,
+@router.get("/predictions/history/{prediction_id}")
+async def get_prediction_detail(
+    prediction_id: int,
     db: Session = Depends(get_db),
-    current_user = Depends(get_current_active_user)
+    current_user: User = Depends(get_current_active_user)
 ):
     """
-    🔍 Dự đoán từ mô tả triệu chứng (PhoBERT NLP only)
+    🔍 Lấy chi tiết một dự đoán cụ thể
     """
     try:
-        raw_body = await request.body()
-        body_data = json.loads(raw_body)
-        symptoms_text = body_data.get('symptoms', '').strip()
+        prediction = db.query(PredictionHistory).filter(
+            PredictionHistory.id == prediction_id,
+            PredictionHistory.user_id == current_user.id
+        ).first()
         
-        if not symptoms_text:
-            raise HTTPException(
-                status_code=400, 
-                detail="Vui lòng nhập mô tả triệu chứng"
-            )
-        
-        try:
-            nlp_predictor = get_nlp_predictor()
-        except Exception as e:
-            print(f"❌ NLP not available: {e}")
-            raise HTTPException(
-                status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-                detail="NLP model chưa sẵn sàng. Vui lòng cài đặt sentence-transformers."
-            )
-            
-        result = nlp_predictor.predict_from_symptoms(symptoms_text)
-        
-        if not result.get('success'):
-            raise HTTPException(
-                status_code=400, 
-                detail=result.get('error', 'Dự đoán thất bại')
-            )
-        
-        recommendations = generate_nlp_recommendations(result)
+        if not prediction:
+            raise HTTPException(status_code=404, detail="Không tìm thấy dự đoán")
         
         return {
             "success": True,
-            "outcome": result['outcome'],
-            "stage": result.get('stage', 0),
-            "confidence": result['confidence'],
-            "answer": result['answer'],
-            "method": result.get('method', 'PhoBERT'),
-            "recommendations": recommendations
+            "prediction": prediction.to_dict()
         }
         
     except HTTPException:
         raise
     except Exception as e:
         print(f"❌ Error: {e}")
-        import traceback
-        traceback.print_exc()
         raise HTTPException(status_code=500, detail=str(e))
 
-# ============ INFO ROUTES ============
-
-@router.get("/models/info")
-async def get_models_info(current_user = Depends(get_current_active_user)):
-    """ℹ️ Thông tin về ML model"""
+@router.delete("/predictions/history/{prediction_id}")
+async def delete_prediction(
+    prediction_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_active_user)
+):
+    """
+    🗑️ Xóa một dự đoán
+    """
     try:
-        predictor = get_predictor()
+        prediction = db.query(PredictionHistory).filter(
+            PredictionHistory.id == prediction_id,
+            PredictionHistory.user_id == current_user.id
+        ).first()
+        
+        if not prediction:
+            raise HTTPException(status_code=404, detail="Không tìm thấy dự đoán")
+        
+        db.delete(prediction)
+        db.commit()
+        
         return {
             "success": True,
-            "model": "XGBoost",
-            "features_count": 11,
-            "classes": ["Normal", "Prediabetes", "Diabetes"],
-            "model_loaded": predictor.model is not None
+            "message": "Đã xóa thành công"
         }
+        
+    except HTTPException:
+        raise
     except Exception as e:
+        db.rollback()
+        print(f"❌ Error: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
-@router.get("/nlp/info")
-async def get_nlp_info(current_user = Depends(get_current_active_user)):
-    """ℹ️ Thông tin về NLP model"""
+@router.get("/predictions/statistics")
+async def get_prediction_statistics(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_active_user)
+):
+    """
+    📊 Lấy thống kê tổng quan
+    """
     try:
-        nlp_predictor = get_nlp_predictor()
+        total = db.query(PredictionHistory).filter(
+            PredictionHistory.user_id == current_user.id
+        ).count()
+        
+        low_risk = db.query(PredictionHistory).filter(
+            PredictionHistory.user_id == current_user.id,
+            PredictionHistory.risk_level == "low"
+        ).count()
+        
+        medium_risk = db.query(PredictionHistory).filter(
+            PredictionHistory.user_id == current_user.id,
+            PredictionHistory.risk_level == "medium"
+        ).count()
+        
+        high_risk = db.query(PredictionHistory).filter(
+            PredictionHistory.user_id == current_user.id,
+            PredictionHistory.risk_level == "high"
+        ).count()
+        
         return {
             "success": True,
-            "phobert_loaded": nlp_predictor.has_phobert,
-            "model": "PhoBERT (VoVanPhuc/sup-SimCSE-VietNamese-phobert-base)"
+            "statistics": {
+                "total_predictions": total,
+                "low_risk_count": low_risk,
+                "medium_risk_count": medium_risk,
+                "high_risk_count": high_risk
+            }
         }
+        
     except Exception as e:
+        print(f"❌ Error: {e}")
         raise HTTPException(status_code=500, detail=str(e))
-
-# ============ HELPER FUNCTIONS ============
-
-def determine_risk_level(prediction, confidence):
-    if prediction == 1:
-        return "high" if confidence >= 0.75 else "medium"
-    return "low"
-
-def generate_recommendations(
-    input_data: Dict, 
-    prediction: int, 
-    confidence: float,
-    nlp_result: Optional[Dict]
-) -> List[str]:
-    """Tạo khuyến nghị dựa trên kết quả"""
-    recommendations = []
-    
-    # Khuyến nghị từ ML features
-    if input_data.get('HighBP', 0) == 1:
-        recommendations.append("⚠️ Huyết áp cao - Cần theo dõi và điều chỉnh")
-    
-    if input_data.get('HighChol', 0) == 1:
-        recommendations.append("⚠️ Cholesterol cao - Nên kiểm tra lipid máu")
-    
-    if input_data.get('Smoker', 0) == 1:
-        recommendations.append("🚭 Nên cai thuốc lá để giảm nguy cơ biến chứng")
-    
-    if input_data.get('PhysActivity', 1) == 0:
-        recommendations.append("🏃 Tăng cường hoạt động thể chất (30 phút/ngày)")
-    
-    bmi = input_data.get('BMI', 28)
-    if bmi > 30:
-        recommendations.append("⚠️ BMI cao (béo phì) - Nên giảm cân")
-    elif bmi > 25:
-        recommendations.append("⚠️ BMI cao (thừa cân) - Kiểm soát cân nặng")
-    
-    if input_data.get('GenHlth', 3) >= 4:
-        recommendations.append("⚠️ Sức khỏe tổng quát kém - Cần tư vấn bác sĩ")
-    
-    # Khuyến nghị theo kết quả dự đoán
-    if prediction == 1:  # Diabetes
-        recommendations.extend([
-            "🚨 CẢNH BÁO: Nguy cơ cao mắc tiểu đường",
-            "🏥 Đi khám bác sĩ NGAY để xét nghiệm glucose máu",
-            "📊 Cần theo dõi đường huyết thường xuyên",
-            "💊 Có thể cần điều trị y tế"
-        ])
-    # elif prediction == 1:  # Prediabetes
-    #     recommendations.extend([
-    #         "🟡 Tiền tiểu đường - Cần can thiệp sớm",
-    #         "🏥 Khám bác sĩ để được tư vấn điều chỉnh lối sống",
-    #         "🥗 Chế độ ăn ít đường, ít tinh bột",
-    #         "🏃 Vận động đều đặn 150 phút/tuần",
-    #         "⚖️ Giảm 5-10% cân nặng nếu thừa cân"
-    #     ])
-    else:  # Normal
-        if confidence < 0.7:
-            recommendations.append("✅ Kết quả tốt nhưng cần theo dõi định kỳ")
-        recommendations.extend([
-            "✅ Duy trì lối sống lành mạnh",
-            "🥗 Chế độ ăn cân bằng, nhiều rau xanh",
-            "🏃 Vận động thường xuyên",
-            "📅 Kiểm tra sức khỏe định kỳ hàng năm"
-        ])
-    
-    # Khuyến nghị từ NLP (nếu có)
-    if nlp_result and nlp_result.get('success'):
-        if nlp_result['outcome'] == 1:
-            recommendations.append("⚠️ Triệu chứng cho thấy dấu hiệu cảnh báo")
-    
-    return recommendations
-
-def generate_nlp_recommendations(result: Dict) -> List[str]:
-    """Tạo khuyến nghị từ NLP result"""
-    recommendations = []
-    
-    outcome = result.get('outcome', 0)
-    confidence = result.get('confidence', 0)
-    
-    if outcome == 1:
-        if confidence > 0.7:
-            recommendations.extend([
-                "⚠️ Triệu chứng nghiêm trọng",
-                "🏥 Nên đi khám bác sĩ NGAY"
-            ])
-        else:
-            recommendations.extend([
-                "⚠️ Có dấu hiệu cảnh báo",
-                "👀 Theo dõi sát triệu chứng",
-                "🏥 Khám bác sĩ nếu triệu chứng trầm trọng hơn"
-            ])
-    else:
-        recommendations.append("✅ Triệu chứng chưa rõ ràng, tiếp tục quan sát")
-    
-    return recommendations
