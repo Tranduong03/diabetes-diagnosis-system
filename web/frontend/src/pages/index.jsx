@@ -2,6 +2,18 @@ import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import "./index.css";
 
+const FIELD_LABELS = {
+  Pregnancies: "Số lần mang thai",
+  Glucose: "Nồng độ đường huyết (mg/dL)",
+  BloodPressure: "Huyết áp tâm trương (mmHg)",
+  SkinThickness: "Độ dày nếp gấp da (mm)",
+  Insulin: "Nồng độ Insulin (µU/mL)",
+  BMI: "Chỉ số khối cơ thể (BMI)",
+  DiabetesPedigreeFunction: "Chỉ số tiền sử gia đình mắc tiểu đường",
+  Age: "Tuổi (năm)"
+};
+
+
 // Mean values từ dataset
 const MEAN_VALUES = {
   Pregnancies: 4,
@@ -143,180 +155,85 @@ export default function Home() {
 
     try {
       // ============================================================
-      // 1. ML PREDICTION (chỉ số y tế)
+      // ✅ SỬ DỤNG ENSEMBLE ENDPOINT MỚI (1 request duy nhất)
       // ============================================================
-      const mlData = { ...dataToPredict };
-      delete mlData.Symptoms;
-
-      const mlResponse = await fetch('http://localhost:8000/api/v1/ai/predict', {
+      const response = await fetch('http://localhost:8000/api/v1/ai/predict/ensemble', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`
         },
-        body: JSON.stringify(mlData)
+        body: JSON.stringify(dataToPredict)  // Gửi tất cả (ML + Symptoms)
       });
 
-      if (!mlResponse.ok) {
-        if (mlResponse.status === 401) {
+      if (!response.ok) {
+        if (response.status === 401) {
           throw new Error('Phiên đăng nhập hết hạn. Vui lòng đăng nhập lại.');
         }
         throw new Error('Không thể kết nối đến server');
       }
 
-      const mlResult = await mlResponse.json();
+      const result = await response.json();
       
       // ============================================================
-      // 2. NLP PREDICTION (triệu chứng - PhoBERT)
+      // HIỂN THỊ KẾT QUẢ (từ 1 response)
       // ============================================================
-      let nlpResult = null;
-      if (dataToPredict.Symptoms && dataToPredict.Symptoms.trim()) {
-        try {
-          const nlpResponse = await fetch('http://localhost:8000/api/v1/ai/predict/symptoms', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              'Authorization': `Bearer ${token}`
-            },
-            body: JSON.stringify({ symptoms: dataToPredict.Symptoms.trim() })
-          });
-
-          if (nlpResponse.ok) {
-            nlpResult = await nlpResponse.json();
-          }
-        } catch (nlpError) {
-          console.error('❌ NLP Error:', nlpError);
-        }
-      }
       
-      // ============================================================
-      // 3. HIỂN THỊ KẾT QUẢ ML
-      // ============================================================
-      const mlModels = mlResult.individual_predictions || [];
+      // ML results
+      const mlModels = result.individual_predictions.filter(p => 
+        p.model !== 'PhoBERT'
+      );
       const mlResults = mlModels.map(m =>
         `${m.model}: ${m.result} (${(m.confidence * 100).toFixed(0)}%)`
       ).join('\n');
 
-      // ============================================================
-      // 4. HIỂN THỊ KẾT QUẢ NLP
-      // ============================================================
+      // NLP results
       let nlpText = "Không có mô tả triệu chứng";
-      if (nlpResult && nlpResult.success) {
-        const outcome = nlpResult.outcome === 1 ? "Có nguy cơ" : "Không có nguy cơ";
-        const stage = nlpResult.stage || 0;
-        const stageText = stage === 0 ? "Không có triệu chứng" :
-                         stage === 1 ? "Tiền tiểu đường" :
-                         stage === 2 ? "Phát triển" : "Nghiêm trọng";
-        
+      const nlpModel = result.individual_predictions.find(p => p.model === 'PhoBERT');
+      if (nlpModel) {
         nlpText = `PhoBERT Analysis:
-• Kết luận: ${outcome}
-• Giai đoạn: ${stageText} (Stage ${stage})
-• Độ tin cậy: ${(nlpResult.confidence * 100).toFixed(1)}%
-• Phân tích: ${nlpResult.answer}`;
+• Kết luận: ${nlpModel.result}
+• Độ tin cậy: ${(nlpModel.confidence * 100).toFixed(1)}%`;
       }
 
-      // ============================================================
-      // 5. ENSEMBLE - CÂN BẰNG ML VÀ NLP
-      // ============================================================
-      let ensembleConf = mlResult.ensemble_confidence;
-      let ensemblePred = mlResult.ensemble_prediction;
-      let ensembleMethod = "ML only";
-      
-      if (nlpResult && nlpResult.success) {
-        // Chuyển outcome NLP thành risk confidence
-        const mlRisk = mlResult.ensemble_confidence;
-        const nlpRisk = nlpResult.outcome === 1 
-          ? nlpResult.confidence 
-          : (1 - nlpResult.confidence);
-        
-        // CÂN BẰNG 50-50 giữa ML và NLP
-        const mlWeight = 0.5;
-        const nlpWeight = 0.5;
-        
-        ensembleConf = (mlRisk * mlWeight) + (nlpRisk * nlpWeight);
-        
-        // Voting: cả 2 phải đồng ý mới là có nguy cơ cao
-        const totalVotes = mlResult.ensemble_prediction + nlpResult.outcome;
-        ensemblePred = totalVotes >= 1 ? 1 : 0;
-        
-        ensembleMethod = "ML + NLP Ensemble (50-50)";
-        
-        console.log('📊 Balanced Ensemble:');
-        console.log(`   ML: pred=${mlResult.ensemble_prediction}, risk=${(mlRisk*100).toFixed(1)}%`);
-        console.log(`   NLP: pred=${nlpResult.outcome}, risk=${(nlpRisk*100).toFixed(1)}%`);
-        console.log(`   Ensemble: pred=${ensemblePred}, risk=${(ensembleConf*100).toFixed(1)}%`);
-      }
+      // Risk level
+      const riskLevel = result.risk_level;
+      const ensembleConf = result.ensemble_confidence;
+      const ensemblePred = result.ensemble_prediction;
 
-      const riskLevel =
-        ensembleConf < 0.3 ? "Thấp" :
-        ensembleConf < 0.6 ? "Trung bình" :
-        "Cao";
+      const riskLevelMap = {
+  low: 'Thấp',
+  medium: 'Trung bình',
+  high: 'Cao',
+};
 
-      // ============================================================
-      // 6. KẾT LUẬN CUỐI CÙNG (CÂN BẰNG)
-      // ============================================================
+      const riskLevelText = riskLevelMap[riskLevel] || 'Không xác định';
+      // Final conclusion
       let finalConclusion = `
-🎯 KẾT QUẢ TỔNG HỢP (${ensembleMethod})
+KẾT QUẢ TỔNG HỢP
 
-📊 Dự đoán: ${ensemblePred === 1 ? 'CÓ NGUY CƠ' : 'KHÔNG CÓ NGUY CƠ'}
-📈 Độ tin cậy ML: ${(mlResult.ensemble_confidence * 100).toFixed(1)}%`;
-
-      if (nlpResult && nlpResult.success) {
-        finalConclusion += `
-📈 Độ tin cậy NLP: ${(nlpResult.confidence * 100).toFixed(1)}%`;
-      }
-
-      finalConclusion += `
-📈 Độ tin cậy tổng hợp: ${(ensembleConf * 100).toFixed(1)}%
-🎚️ Mức độ nguy cơ: ${riskLevel}
+Dự đoán: ${ensemblePred === 1 ? 'CÓ NGUY CƠ' : 'KHÔNG CÓ NGUY CƠ'}
+Độ tin cậy: ${(ensembleConf * 100).toFixed(1)}%
+Mức độ nguy cơ: ${riskLevelText}
 
 `;
 
-      // Phân tích chi tiết
-      if (riskLevel === "Cao") {
+      if (riskLevel === 'high') {
         finalConclusion += `🔴 CẢNH BÁO: Nguy cơ cao!
 
-Các yếu tố đáng lo ngại:`;
-        
-        if (mlResult.ensemble_prediction === 1) {
-          finalConclusion += `\n• ML phát hiện nguy cơ từ các chỉ số y tế`;
-          if (dataToPredict.Glucose > 140) finalConclusion += `\n  - Glucose cao: ${dataToPredict.Glucose}`;
-          if (dataToPredict.BMI > 30) finalConclusion += `\n  - BMI cao: ${dataToPredict.BMI}`;
-        }
-        
-        if (nlpResult && nlpResult.outcome === 1) {
-          finalConclusion += `\n• PhoBERT phát hiện triệu chứng rõ ràng`;
-          if (nlpResult.stage > 0) {
-            finalConclusion += `\n  - Giai đoạn: ${nlpResult.stage}`;
-          }
-        }
-        
-        finalConclusion += `\n\n🏥 Khuyến nghị:
+🏥 Khuyến nghị:
 • Đi khám bác sĩ NGAY để được tư vấn
 • Xét nghiệm glucose máu đầy đủ
 • Chuẩn bị hồ sơ y tế`;
-        
-      } else if (riskLevel === "Trung bình") {
+      } else if (riskLevel === 'medium') {
         finalConclusion += `🟡 Nguy cơ trung bình
 
-`;
-        if (mlResult.ensemble_prediction === 1 && nlpResult && nlpResult.outcome === 0) {
-          finalConclusion += `ML phát hiện nguy cơ từ chỉ số y tế, nhưng PhoBERT không thấy triệu chứng rõ ràng.`;
-        } else if (mlResult.ensemble_prediction === 0 && nlpResult && nlpResult.outcome === 1) {
-          finalConclusion += `PhoBERT phát hiện triệu chứng, nhưng các chỉ số y tế còn ổn.`;
-        } else {
-          finalConclusion += `Một số yếu tố cần chú ý.`;
-        }
-        
-        finalConclusion += `\n\n👀 Khuyến nghị:
+👀 Khuyến nghị:
 • Theo dõi sức khỏe định kỳ
 • Kiểm tra 3-6 tháng/lần
 • Duy trì lối sống lành mạnh`;
-        
       } else {
         finalConclusion += `🟢 Kết quả tốt!
-
-Cả ML và PhoBERT đều không phát hiện nguy cơ rõ ràng.
 
 ✅ Khuyến nghị:
 • Tiếp tục duy trì lối sống lành mạnh
@@ -407,7 +324,7 @@ Cả ML và PhoBERT đều không phát hiện nguy cơ rõ ràng.
               }}>
                 <ul style={{ margin: '0', paddingLeft: '20px', color: '#b45309' }}>
                   {missingFields.map(field => (
-                    <li key={field}>{field}</li>
+                    <li key={field}>{FIELD_LABELS[field]}</li>
                   ))}
                 </ul>
               </div>
@@ -460,7 +377,7 @@ Cả ML và PhoBERT đều không phát hiện nguy cơ rõ ràng.
           <div className="grid">
             {NUMERIC_FIELDS.map((key) => (
               <div key={key} className="field">
-                <label>{key}</label>
+                <label>{FIELD_LABELS[key] || key}</label>
                 <input
                   type="number"
                   name={key}

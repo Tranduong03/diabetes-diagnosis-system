@@ -20,6 +20,21 @@ router = APIRouter(prefix="/ai", tags=["AI Prediction"])
 
 # ============ SCHEMAS ============
 
+class DiabetesEnsembleInput(BaseModel):
+    """Input data cho Ensemble prediction (ML + NLP)"""
+    # ML fields
+    Pregnancies: int = Field(ge=0, le=20)
+    Glucose: float = Field(ge=0, le=300)
+    BloodPressure: float = Field(ge=0, le=200)
+    SkinThickness: float = Field(ge=0, le=100)
+    Insulin: float = Field(ge=0, le=1000)
+    BMI: float = Field(ge=0, le=70)
+    DiabetesPedigreeFunction: float = Field(ge=0, le=3)
+    Age: int = Field(ge=1, le=120)
+    
+    # NLP field (optional)
+    Symptoms: Optional[str] = Field(None, description="Mô tả triệu chứng (tùy chọn)")
+
 class DiabetesInput(BaseModel):
     """Input data cho ML prediction"""
     Pregnancies: int = Field(ge=0, le=20)
@@ -63,6 +78,100 @@ class HistoryResponse(BaseModel):
     notes: Optional[str]
 
 # ============ PREDICTION ROUTES (WITH SAVE) ============
+
+@router.post("/predict/ensemble", response_model=PredictionResponse)
+async def predict_ensemble_ml_nlp(
+    data: DiabetesEnsembleInput,
+    db: Session = Depends(get_db),
+    current_user = Depends(get_current_active_user)
+):
+    """
+    🎯 Dự đoán tổng hợp (Ensemble ML + NLP)
+    
+    Xử lý cả chỉ số y tế VÀ triệu chứng trong 1 request.
+    Lưu vào database với prediction_type = ENSEMBLE.
+    
+    Args:
+        ML fields: Pregnancies, Glucose, BMI, Age...
+        Symptoms: Mô tả triệu chứng (optional)
+    """
+    try:
+        predictor = get_predictor()
+        
+        # 1. ML Prediction
+        ml_data = data.model_dump()
+        symptoms_text = ml_data.pop('Symptoms', None)  # Remove Symptoms for ML
+        
+        ml_result = predictor.predict_ensemble(ml_data)
+        
+        # 2. NLP Prediction (if symptoms provided)
+        nlp_result = None
+        if symptoms_text and symptoms_text.strip():
+            nlp_predictor = get_nlp_predictor()
+            nlp_result = nlp_predictor.predict_from_symptoms(symptoms_text.strip())
+        
+        # 3. Ensemble (combine ML + NLP)
+        if nlp_result and nlp_result['success']:
+            # CÂN BẰNG 50-50
+            ml_risk = ml_result['ensemble_confidence']
+            nlp_risk = nlp_result['outcome'] if nlp_result['outcome'] == 1 else (1 - nlp_result['confidence'])
+            
+            ensemble_conf = (ml_risk * 0.5) + (nlp_risk * 0.5)
+            ensemble_pred = 1 if (ml_result['ensemble_prediction'] + nlp_result['outcome']) >= 1 else 0
+            ensemble_method = "ML + NLP Ensemble (50-50)"
+            prediction_type = PredictionType.ENSEMBLE
+        else:
+            # Only ML
+            ensemble_conf = ml_result['ensemble_confidence']
+            ensemble_pred = ml_result['ensemble_prediction']
+            ensemble_method = "ML only"
+            prediction_type = PredictionType.ML_ONLY
+        
+        # 4. Generate recommendations
+        recommendations = generate_ml_recommendations(ml_data, ml_result)
+        if nlp_result and nlp_result['success']:
+            recommendations.extend(generate_nlp_recommendations(nlp_result))
+        
+        # 5. Save to database
+        input_data_with_symptoms = {**ml_data, 'Symptoms': symptoms_text}
+        
+        db_prediction = crud.create_prediction(
+            db=db,
+            user_id=current_user.id,
+            prediction_type=prediction_type,
+            input_data=input_data_with_symptoms,
+            ml_result=ml_result,
+            nlp_result=nlp_result,
+            ensemble_result={
+                'ensemble_prediction': ensemble_pred,
+                'ensemble_confidence': ensemble_conf,
+                'ensemble_method': ensemble_method
+            },
+            recommendations=recommendations
+        )
+        
+        print(f"✅ Saved ENSEMBLE prediction to DB with ID: {db_prediction.id}")
+        
+        return {
+            "success": True,
+            "prediction_id": db_prediction.id,
+            "ensemble_prediction": ensemble_pred,
+            "ensemble_confidence": ensemble_conf,
+            "risk_level": crud.map_confidence_to_risk_level(ensemble_conf).value,
+            "result": 'Có nguy cơ mắc bệnh tiểu đường' if ensemble_pred == 1 else 'Không có nguy cơ tiểu đường',
+            "models_count": ml_result['models_count'] + (1 if nlp_result else 0),
+            "individual_predictions": ml_result['individual_predictions'] + (
+                [{'model': 'PhoBERT', 'result': nlp_result['answer'], 'confidence': nlp_result['confidence']}] 
+                if nlp_result and nlp_result['success'] else []
+            ),
+            "recommendations": recommendations
+        }
+        
+    except Exception as e:
+        print(f"❌ Error: {e}")
+        import traceback
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=str(e))
 
 @router.post("/predict", response_model=PredictionResponse)
 async def predict_diabetes(
