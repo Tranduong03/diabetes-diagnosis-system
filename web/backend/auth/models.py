@@ -24,9 +24,9 @@ class User(Base):
     role = Column(Enum(UserRole), default=UserRole.user, nullable=False)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
-    predictions = relationship(
-        "PredictionHistory", 
-        back_populates="user", 
-        cascade="all, delete-orphan",
-        lazy="dynamic"  # Query only when needed
-    )
+    # predictions = relationship(
+    #     "PredictionHistory", 
+    #     back_populates="user", 
+    #     cascade="all, delete-orphan",
+    #     lazy="dynamic"  # Query only when needed
+    # )

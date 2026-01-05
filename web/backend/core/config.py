@@ -12,7 +12,7 @@ class Settings(BaseSettings):
     
   SECRET_KEY: str
   DATABASE_URL: str
-    
+  ENVIRONMENT: str = "development"    
   class Config:
     env_file = ".env"
     case_sensitive = True

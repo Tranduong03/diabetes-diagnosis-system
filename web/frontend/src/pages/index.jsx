@@ -20,11 +20,11 @@ const FIELD_DESCRIPTIONS = {
   HighChol: "Cholesterol cao?",
   Smoker: "Bạn có hút thuốc không?",
   HeartDiseaseorAttack: "Tiền sử bệnh tim?",
-  PhysActivity: "Bạn có hoạt động thể chất trong 30 ngày không",
+  PhysActivity: "Bạn có hoạt động thể chất trong 30 ngày không?",
   GenHlth: "Rất tốt → Kém",
-  MentHlth: "Ngày không tốt (0-30)",
-  PhysHlth: "Ngày không tốt (0-30)",
-  DiffWalk: "Đi bộ/leo cầu thang khó khăn?",
+  MentHlth: "Trong 30 ngày qua, sức khỏe tinh thần của bạn không tốt ở mức độ nào?",
+  PhysHlth: "Trong 30 ngày qua, sức khỏe thể chất của bạn không tốt ở mức độ nào?",
+  DiffWalk: "Gần đây bạn đi bộ hoặc leo cầu thang có nhanh mệt không?",
   Age: "Chọn độ tuổi của bạn"
 };
 
@@ -50,6 +50,22 @@ const HEALTH_OPTIONS = [
   { value: 3, label: "Bình thường" },
   { value: 4, label: "Kém" },
   { value: 5, label: "Rất kém" }
+];
+
+const MEN_HLTH_OPTIONS = [
+  { value: 0, label: "Không bao giờ" },
+  { value: 3, label: "Hiếm khi" },
+  { value: 9, label: "Thỉnh thoảng" },
+  { value: 16, label: "Thường xuyên" },
+  { value: 30, label: "Liên tục" }
+];
+
+const PHYS_HLTH_OPTIONS = [
+  { value: 0, label: "Không bao giờ" },
+  { value: 3, label: "Hiếm khi" },
+  { value: 9, label: "Thỉnh thoảng" },
+  { value: 16, label: "Thường xuyên" },
+  { value: 30, label: "Liên tục" }
 ];
 
 export default function Home() {
@@ -108,14 +124,14 @@ export default function Home() {
 
   const handleClear = () => {
     setFormData({
-      HighBP: 0,
-      HighChol: 0,
-      Smoker: 0,
-      HeartDiseaseorAttack: 0,
+      HighBP: 1,
+      HighChol: 1,
+      Smoker: 1,
+      HeartDiseaseorAttack: 1,
       PhysActivity: 1,
       GenHlth: 3,
-      MentHlth: 0,
-      PhysHlth: 0,
+      MentHlth: 25,
+      PhysHlth: 25,
       DiffWalk: 0,
       Age: 9,
       Symptoms: "",
@@ -220,8 +236,7 @@ export default function Home() {
 
       const diagnosisMap = {
         0: 'KHÔNG CÓ TIỂU ĐƯỜNG',
-        1: 'TIỀN TIỂU ĐƯỜNG',
-        2: 'CÓ TIỂU ĐƯỜNG'
+        1: 'CÓ NGUY CƠ TIỂU ĐƯỜNG',
       };
 
       let finalConclusion = `
@@ -233,7 +248,7 @@ Mức độ nguy cơ: ${riskLevelText}
 
 `;
 
-      if (ensemblePred === 2 || riskLevel === 'high') {
+      if (ensemblePred === 1 || riskLevel === 'high') {
         finalConclusion += `🔴 CẢNH BÁO: Nguy cơ cao!\n\n🏥 Khuyến nghị:\n• Đi khám bác sĩ NGAY để được tư vấn\n• Xét nghiệm glucose máu đầy đủ\n• Chuẩn bị hồ sơ y tế`;
       } else if (ensemblePred === 1 || riskLevel === 'medium') {
         finalConclusion += `🟡 Tiền tiểu đường / Nguy cơ trung bình\n\n👀 Khuyến nghị:\n• Theo dõi đường huyết định kỳ\n• Thay đổi lối sống: ăn uống, vận động\n• Kiểm tra 3-6 tháng/lần\n• Giảm cân nếu thừa cân`;
@@ -404,6 +419,30 @@ Mức độ nguy cơ: ${riskLevelText}
                   )}
                 </div>
 
+
+                <div className="field-compact">
+                  <label className="field-label-compact">
+                    {FIELD_LABELS.PhysHlth}
+                    <span className="field-hint">{FIELD_DESCRIPTIONS.PhysHlth}</span>
+                  </label>
+                  <select name="PhysHlth" value={formData.PhysHlth} onChange={handleChange} disabled={loading} className="select-input">
+                    {PHYS_HLTH_OPTIONS.map(opt => (
+                      <option key={opt.value} value={opt.value}>{opt.label}</option>
+                    ))}
+                  </select>
+                </div>
+                <div className="field-compact">
+                  <label className="field-label-compact">
+                    {FIELD_LABELS.MentHlth}
+                    <span className="field-hint">{FIELD_DESCRIPTIONS.MentHlth}</span>
+                  </label>
+                  <select name="MentHlth" value={formData.MentHlth} onChange={handleChange} disabled={loading} className="select-input">
+                    {MEN_HLTH_OPTIONS.map(opt => (
+                      <option key={opt.value} value={opt.value}>{opt.label}</option>
+                    ))}
+                  </select>
+                </div>
+
                 <div className="field-compact">
                   <label className="field-label-compact">
                     {FIELD_LABELS.GenHlth}
@@ -417,42 +456,6 @@ Mức độ nguy cơ: ${riskLevelText}
                 </div>
 
                 <div className="field-compact">
-                  <label className="field-label-compact">
-                    {FIELD_LABELS.MentHlth}
-                    <span className="field-hint">{FIELD_DESCRIPTIONS.MentHlth}</span>
-                  </label>
-                  <input
-                    type="number"
-                    name="MentHlth"
-                    value={formData.MentHlth}
-                    onChange={handleChange}
-                    min="0"
-                    max="30"
-                    step="1"
-                    disabled={loading}
-                    className="number-input-compact"
-                  />
-                </div>
-
-                <div className="field-compact">
-                  <label className="field-label-compact">
-                    {FIELD_LABELS.PhysHlth}
-                    <span className="field-hint">{FIELD_DESCRIPTIONS.PhysHlth}</span>
-                  </label>
-                  <input
-                    type="number"
-                    name="PhysHlth"
-                    value={formData.PhysHlth}
-                    onChange={handleChange}
-                    min="0"
-                    max="30"
-                    step="1"
-                    disabled={loading}
-                    className="number-input-compact"
-                  />
-                </div>
-
-                <div className="field-compact full-width">
                   <label className="field-label-compact">
                     {FIELD_LABELS.Age}
                     <span className="field-hint">{FIELD_DESCRIPTIONS.Age}</span>
